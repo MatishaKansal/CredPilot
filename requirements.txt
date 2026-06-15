@@ -1,0 +1,11 @@
+pandas
+numpy
+xgboost
+scikit-learn
+shap
+imbalanced-learn
+fastapi
+uvicorn
+streamlit
+plotly
+jupyter

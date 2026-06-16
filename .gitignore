@@ -1,3 +1,21 @@
-*.csv
+# Environment
+.env
+Backend/.env
+
+# Virtual Environment
+venv/
+Backend/venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ML
+model/
 data/
 
+*.pkl
+*.npy

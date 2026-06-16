@@ -61,7 +61,10 @@ const Login = () => {
   };
 
   return (
-    <div className="h-[100dvh] overflow-hidden bg-transparent flex items-center justify-center px-4 py-4 sm:px-6 sm:py-6">
+    <div className="relative h-[100dvh] overflow-hidden bg-transparent flex items-center justify-center px-4 py-4 sm:px-6 sm:py-6">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-white via-[#f6f9ff] to-[#dbeafe]" />
+      <div className="pointer-events-none absolute -top-24 left-[-6rem] h-72 w-72 rounded-full bg-blue-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute top-40 right-[-5rem] h-80 w-80 rounded-full bg-sky-200/40 blur-3xl" />
       <div className="w-full max-w-md rounded-[1rem] border border-[#1D4ED8]/70 bg-white px-5 py-6 shadow-[0_30px_80px_rgba(37,99,235,0.18)] sm:px-8 sm:py-8">
         <div className="flex flex-col items-center mb-4 sm:mb-6">
           <img src={logo} alt="CredPilot" className="h-12 w-12 sm:h-14 sm:w-14 object-contain mb-2" />

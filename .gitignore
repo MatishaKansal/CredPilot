@@ -2,6 +2,9 @@
 .env
 Backend/.env
 
+node_modules
+frontend/ node_modules
+
 # Virtual Environment
 venv/
 Backend/venv/
@@ -19,3 +22,4 @@ data/
 
 *.pkl
 *.npy
+

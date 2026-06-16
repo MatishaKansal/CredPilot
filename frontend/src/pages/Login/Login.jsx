@@ -65,59 +65,59 @@ const Login = () => {
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-white via-[#f6f9ff] to-[#dbeafe]" />
       <div className="pointer-events-none absolute -top-24 left-[-6rem] h-72 w-72 rounded-full bg-blue-200/30 blur-3xl" />
       <div className="pointer-events-none absolute top-40 right-[-5rem] h-80 w-80 rounded-full bg-sky-200/40 blur-3xl" />
-      <div className="w-full max-w-md rounded-[1rem] border border-[#1D4ED8]/70 bg-white px-5 py-6 shadow-[0_30px_80px_rgba(37,99,235,0.18)] sm:px-8 sm:py-8">
+      <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white px-5 py-6 shadow-[0_24px_70px_rgba(7,26,63,0.12)] sm:px-8 sm:py-8">
         <div className="flex flex-col items-center mb-4 sm:mb-6">
           <img src={logo} alt="CredPilot" className="h-12 w-12 sm:h-14 sm:w-14 object-contain mb-2" />
           <h1 className="text-xl sm:text-2xl font-bold">
-            <span className="text-[#1a237e]">Cred</span>
-            <span className="text-[#1565C0]">Pilot</span>
+            <span className="text-[#071a3f]">Cred</span>
+            <span className="text-blue-700">Pilot</span>
           </h1>
-          <p className="text-gray-400 text-[10px] sm:text-xs mt-1 tracking-widest uppercase text-center">
+          <p className="text-slate-400 text-[10px] sm:text-xs mt-1 tracking-widest uppercase text-center">
             Predict. Trust. Proceed.
           </p>
         </div>
 
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Welcome Back!</h2>
-        <p className="text-gray-400 text-xs sm:text-sm mb-3 sm:mb-4">Login to continue to your account</p>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-950 mb-1">Welcome Back!</h2>
+        <p className="text-slate-500 text-xs sm:text-sm mb-3 sm:mb-4">Login to continue to your account</p>
 
         {error && (
-          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-sm">
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-2.5 sm:space-y-3">
-          <div className="flex items-center gap-3 border border-gray-200 rounded-2xl px-4 py-2.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-            <Mail size={18} className="text-gray-400 shrink-0" />
+          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 transition-all focus-within:border-blue-700 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100">
+            <Mail size={18} className="text-slate-400 shrink-0" />
             <input
               type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email or Phone Number"
-              className="flex-1 text-sm outline-none bg-transparent text-gray-800 placeholder-gray-400"
+              className="flex-1 text-sm outline-none bg-transparent text-slate-800 placeholder:text-slate-400"
             />
           </div>
 
-          <div className="flex items-center gap-3 border border-gray-200 rounded-2xl px-4 py-2.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-            <Lock size={18} className="text-gray-400 shrink-0" />
+          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 transition-all focus-within:border-blue-700 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100">
+            <Lock size={18} className="text-slate-400 shrink-0" />
             <input
               type={showPass ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="flex-1 text-sm outline-none bg-transparent text-gray-800 placeholder-gray-400"
+              className="flex-1 text-sm outline-none bg-transparent text-slate-800 placeholder:text-slate-400"
             />
             <button
               type="button"
               onClick={() => setShowPass(!showPass)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-slate-400 hover:text-slate-700"
             >
               {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
           <div className="flex justify-end">
-            <Link to="/forgot-password" className="text-xs sm:text-sm text-blue-600 font-medium hover:underline">
+            <Link to="/forgot-password" className="text-xs sm:text-sm text-blue-700 font-medium hover:text-blue-900">
               Forgot Password?
             </Link>
           </div>
@@ -125,7 +125,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-2xl transition-all disabled:opacity-50 text-sm sm:text-base"
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-700 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-900 disabled:opacity-50 sm:text-base"
           >
             {loading ? "Logging in..." : "Login"}
             {!loading && <ArrowRight size={18} />}
@@ -133,23 +133,23 @@ const Login = () => {
         </form>
 
         <div className="flex items-center gap-3 my-3 sm:my-4">
-          <div className="flex-1 border-t border-gray-200" />
-          <span className="text-gray-400 text-sm">or</span>
-          <div className="flex-1 border-t border-gray-200" />
+          <div className="flex-1 border-t border-slate-200" />
+          <span className="text-slate-400 text-sm">or</span>
+          <div className="flex-1 border-t border-slate-200" />
         </div>
 
         <button
           onClick={handleBankLogin}
           disabled={bankLoading}
-          className="w-full flex items-center justify-center gap-2 border-2 border-blue-600 text-blue-600 font-semibold py-3 rounded-2xl hover:bg-blue-50 transition-all disabled:opacity-50 text-sm sm:text-base"
+          className="w-full flex items-center justify-center gap-2 rounded-lg border border-[#071a3f] py-3 text-sm font-semibold text-[#071a3f] transition-all hover:bg-[#071a3f] hover:text-white disabled:opacity-50 sm:text-base"
         >
           <Building2 size={18} />
           {bankLoading ? "Logging in..." : "Login as Bank / Employee"}
         </button>
 
-        <p className="text-center text-xs sm:text-sm text-gray-400 mt-3 sm:mt-4">
+        <p className="text-center text-xs sm:text-sm text-slate-500 mt-3 sm:mt-4">
           Don't have an account?{" "}
-          <Link to="/register" className="text-blue-600 font-semibold hover:underline">
+          <Link to="/register" className="text-blue-700 font-semibold hover:text-blue-900">
             Register
           </Link>
         </p>

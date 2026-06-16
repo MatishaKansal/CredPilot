@@ -56,38 +56,38 @@ const Register = () => {
   };
 
   const inputBase =
-    "flex items-center gap-3 border border-gray-200 rounded-2xl px-4 py-2.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all";
+    "flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 transition-all focus-within:border-blue-700 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100";
   const inputField =
-    "flex-1 text-sm outline-none bg-transparent text-gray-800 placeholder-gray-400";
+    "flex-1 text-sm outline-none bg-transparent text-slate-800 placeholder:text-slate-400";
 
   return (
     <div className="relative h-[100dvh] overflow-hidden bg-transparent flex items-center justify-center px-4 py-4 sm:px-6 sm:py-6">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-white via-[#f6f9ff] to-[#dbeafe]" />
       <div className="pointer-events-none absolute -top-24 left-[-6rem] h-72 w-72 rounded-full bg-blue-200/30 blur-3xl" />
       <div className="pointer-events-none absolute top-40 right-[-5rem] h-80 w-80 rounded-full bg-sky-200/40 blur-3xl" />
-      <div className="w-full max-w-md rounded-[1rem] border border-[#1D4ED8]/70 bg-white px-5 py-6 shadow-[0_30px_80px_rgba(37,99,235,0.18)] sm:px-8 sm:py-8">
+      <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white px-5 py-6 shadow-[0_24px_70px_rgba(7,26,63,0.12)] sm:px-8 sm:py-8">
         <div className="flex flex-col items-center mb-4 sm:mb-6">
           <img src={logo} alt="CredPilot" className="h-12 w-12 sm:h-14 sm:w-14 object-contain mb-2" />
           <h1 className="text-xl sm:text-2xl font-bold">
-            <span className="text-[#1a237e]">Cred</span>
-            <span className="text-[#1565C0]">Pilot</span>
+            <span className="text-[#071a3f]">Cred</span>
+            <span className="text-blue-700">Pilot</span>
           </h1>
-          <p className="text-gray-400 text-[10px] sm:text-xs mt-1 tracking-widest uppercase text-center">
+          <p className="text-slate-400 text-[10px] sm:text-xs mt-1 tracking-widest uppercase text-center">
             Predict. Trust. Proceed.
           </p>
         </div>
 
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Create Account</h2>
-        <p className="text-gray-400 text-xs sm:text-sm mb-3 sm:mb-4">Sign up to get started with CredPilot</p>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-950 mb-1">Create Account</h2>
+        <p className="text-slate-500 text-xs sm:text-sm mb-3 sm:mb-4">Sign up to get started with CredPilot</p>
 
         {error && (
-          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-sm">
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-2xl text-green-700 text-sm flex items-center gap-2">
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             <CheckCircle2 size={16} />
             Account created! Redirecting to login…
           </div>
@@ -95,7 +95,7 @@ const Register = () => {
 
         <form onSubmit={handleRegister} className="space-y-2.5 sm:space-y-3">
           <div className={inputBase}>
-            <User size={18} className="text-gray-400 shrink-0" />
+            <User size={18} className="text-slate-400 shrink-0" />
             <input
               type="text"
               value={form.fullName}
@@ -106,7 +106,7 @@ const Register = () => {
           </div>
 
           <div className={inputBase}>
-            <Mail size={18} className="text-gray-400 shrink-0" />
+            <Mail size={18} className="text-slate-400 shrink-0" />
             <input
               type="text"
               value={form.email}
@@ -117,7 +117,7 @@ const Register = () => {
           </div>
 
           <div className={inputBase}>
-            <Phone size={18} className="text-gray-400 shrink-0" />
+            <Phone size={18} className="text-slate-400 shrink-0" />
             <input
               type="tel"
               value={form.phone}
@@ -128,7 +128,7 @@ const Register = () => {
           </div>
 
           <div className={inputBase}>
-            <Lock size={18} className="text-gray-400 shrink-0" />
+            <Lock size={18} className="text-slate-400 shrink-0" />
             <input
               type={showPass ? "text" : "password"}
               value={form.password}
@@ -139,14 +139,14 @@ const Register = () => {
             <button
               type="button"
               onClick={() => setShowPass(!showPass)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-slate-400 hover:text-slate-700"
             >
               {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
           <div className={inputBase}>
-            <Lock size={18} className="text-gray-400 shrink-0" />
+            <Lock size={18} className="text-slate-400 shrink-0" />
             <input
               type={showConfirm ? "text" : "password"}
               value={form.confirmPassword}
@@ -157,7 +157,7 @@ const Register = () => {
             <button
               type="button"
               onClick={() => setShowConfirm(!showConfirm)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-slate-400 hover:text-slate-700"
             >
               {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -166,16 +166,16 @@ const Register = () => {
           <button
             type="submit"
             disabled={loading || success}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-2xl transition-all disabled:opacity-50 text-sm sm:text-base"
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-700 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-900 disabled:opacity-50 sm:text-base"
           >
             {loading ? "Creating account…" : "Create Account"}
             {!loading && <ArrowRight size={18} />}
           </button>
         </form>
 
-        <p className="text-center text-xs sm:text-sm text-gray-400 mt-3 sm:mt-4">
+        <p className="text-center text-xs sm:text-sm text-slate-500 mt-3 sm:mt-4">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 font-semibold hover:underline">
+          <Link to="/login" className="text-blue-700 font-semibold hover:text-blue-900">
             Login
           </Link>
         </p>

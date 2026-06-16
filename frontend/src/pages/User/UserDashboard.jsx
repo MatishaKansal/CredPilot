@@ -1,15 +1,33 @@
 import {
-  AreaChart, Area,
-  BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import {
-  FileText, ShieldCheck, Clock, CheckCircle2,
-  ArrowRight, TrendingUp, AlertCircle,
+  AlertCircle,
+  ArrowRight,
+  Bell,
+  CheckCircle2,
+  Clock,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  MessageCircle,
+  Search,
+  ShieldCheck,
+  TrendingUp,
+  Upload,
+  User,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-/* ─── mock data ───────────────────────────────────────── */
+import logo from "../../assets/logo.png";
 
 const riskTrend = [
   { month: "Jan", score: 58 },
@@ -17,271 +35,394 @@ const riskTrend = [
   { month: "Mar", score: 61 },
   { month: "Apr", score: 67 },
   { month: "May", score: 72 },
-  { month: "Jun", score: 70 },
+  { month: "Jun", score: 76 },
 ];
 
-const loanActivity = [
-  { month: "Jan", amount: 0 },
-  { month: "Feb", amount: 50000 },
-  { month: "Mar", amount: 50000 },
-  { month: "Apr", amount: 120000 },
-  { month: "May", amount: 120000 },
-  { month: "Jun", amount: 200000 },
+const documentMix = [
+  { name: "Done", value: 3, color: "#16a34a" },
+  { name: "Pending", value: 2, color: "#f59e0b" },
 ];
 
 const recentActivity = [
   {
-    id: 1,
-    title: "Loan application submitted",
-    desc: "Home Loan — ₹20,00,000",
-    time: "2 hours ago",
-    status: "pending",
-    icon: FileText,
-  },
-  {
-    id: 2,
-    title: "Eligibility check completed",
-    desc: "Risk score: 72 / 100",
-    time: "Yesterday",
-    status: "warning",
-    icon: ShieldCheck,
-  },
-  {
-    id: 3,
-    title: "Documents uploaded",
-    desc: "Aadhaar, PAN, salary slips",
-    time: "2 days ago",
+    title: "Income proof verified",
+    desc: "Salary slips matched bank statement records",
+    time: "Today, 10:45 AM",
     status: "success",
     icon: CheckCircle2,
   },
   {
-    id: 4,
-    title: "Loan under review",
-    desc: "Officer assigned: Priya Sharma",
-    time: "3 days ago",
+    title: "PAN and Aadhaar uploaded",
+    desc: "Identity documents are ready for officer review",
+    time: "Yesterday",
     status: "info",
-    icon: Clock,
+    icon: Upload,
+  },
+  {
+    title: "Risk score improved",
+    desc: "On-time repayments raised your profile score",
+    time: "2 days ago",
+    status: "success",
+    icon: TrendingUp,
+  },
+  {
+    title: "Address proof required",
+    desc: "Upload a recent utility bill to avoid delay",
+    time: "Pending",
+    status: "warning",
+    icon: AlertCircle,
   },
 ];
 
-/* ─── helpers ─────────────────────────────────────────── */
+const navItems = [
+  { label: "Dashboard", icon: LayoutDashboard, active: true },
+  { label: "Profile", icon: User },
+  { label: "Applications", icon: FileText },
+  { label: "Documents", icon: Upload },
+  { label: "Eligibility", icon: ShieldCheck },
+  { label: "Support", icon: MessageCircle },
+];
 
 const statusStyles = {
-  pending: "bg-amber-50  text-amber-600  border-amber-100",
-  warning: "bg-orange-50 text-orange-600 border-orange-100",
-  success: "bg-emerald-50 text-emerald-600 border-emerald-100",
-  info:    "bg-blue-50   text-[#1565C0]  border-blue-100",
+  success: "border-emerald-100 bg-emerald-50 text-emerald-700",
+  info: "border-blue-100 bg-blue-50 text-blue-700",
+  warning: "border-amber-100 bg-amber-50 text-amber-700",
 };
 
-const StatCard = ({ label, value, sub, icon: Icon, accent }) => (
-  <div className="bg-white border border-gray-100 rounded-2xl p-5 flex flex-col gap-3">
-    <div className="flex items-center justify-between">
-      <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">{label}</span>
-      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${accent}`}>
-        <Icon size={16} className="text-white" />
+const MetricCard = ({ label, value, detail, icon: Icon, tone }) => (
+  <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-xs font-semibold uppercase text-slate-400">{label}</p>
+        <p className="mt-2 text-2xl font-bold text-slate-950">{value}</p>
+      </div>
+      <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${tone}`}>
+        <Icon size={18} />
       </div>
     </div>
+    <p className="mt-3 text-sm text-slate-500">{detail}</p>
+  </div>
+);
+
+const SectionHeader = ({ title, subtitle, action }) => (
+  <div className="mb-4 flex items-start justify-between gap-3">
     <div>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      <h2 className="text-base font-bold text-slate-950">{title}</h2>
+      {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
     </div>
+    {action && (
+      <button className="text-sm font-semibold text-blue-700 hover:text-blue-900">
+        {action}
+      </button>
+    )}
   </div>
 );
 
 const CustomTooltip = ({ active, payload, label, prefix = "" }) => {
-  if (active && payload?.length) {
-    return (
-      <div className="bg-white border border-gray-100 rounded-xl px-3 py-2 text-xs shadow-sm">
-        <p className="text-gray-400 mb-0.5">{label}</p>
-        <p className="font-semibold text-gray-900">
-          {prefix}{payload[0].value.toLocaleString()}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
+  if (!active || !payload?.length) return null;
 
-/* ─── main component ──────────────────────────────────── */
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
+      <p className="text-slate-400">{label}</p>
+      <p className="mt-1 font-bold text-slate-900">
+        {prefix}
+        {payload[0].value.toLocaleString("en-IN")}
+      </p>
+    </div>
+  );
+};
 
 const UserDashboard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-6">
-
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Good morning, Rahul 👋</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Here's what's happening with your loans.</p>
-        </div>
-        <button
-          onClick={() => navigate("/user/apply-loan")}
-          className="hidden md:flex items-center gap-2 bg-[#1565C0] hover:bg-[#1a237e] text-white text-sm font-semibold px-4 py-2.5 rounded-2xl transition-all"
-        >
-          Apply for Loan <ArrowRight size={15} />
-        </button>
-      </div>
-
-      {/* ── Stat cards ─────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Active Loans"
-          value="1"
-          sub="Home loan — under review"
-          icon={FileText}
-          accent="bg-[#1565C0]"
-        />
-        <StatCard
-          label="Risk Score"
-          value="72"
-          sub="Moderate risk"
-          icon={AlertCircle}
-          accent="bg-amber-500"
-        />
-        <StatCard
-          label="Loan Amount"
-          value="₹20L"
-          sub="Applied this month"
-          icon={TrendingUp}
-          accent="bg-emerald-500"
-        />
-        <StatCard
-          label="Docs Uploaded"
-          value="3 / 5"
-          sub="2 more required"
-          icon={CheckCircle2}
-          accent="bg-purple-500"
-        />
-      </div>
-
-      {/* ── Charts row ─────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-        {/* Risk score trend */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen bg-[#eef3f8] text-slate-900">
+      <div className="grid min-h-screen lg:grid-cols-[248px_1fr]">
+        <aside className="hidden border-r border-white/60 bg-[#071a3f] px-4 py-5 text-white lg:block">
+          <div className="mb-8 flex items-center gap-3 px-2">
+            <img src={logo} alt="CredPilot" className="h-9 w-9 object-contain" />
             <div>
-              <p className="text-sm font-semibold text-gray-900">Risk score trend</p>
-              <p className="text-xs text-gray-400">Last 6 months</p>
+              <p className="text-lg font-bold leading-none">CredPilot</p>
+              <p className="mt-1 text-xs text-blue-200">Applicant workspace</p>
             </div>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100 font-medium">
-              72 this month
-            </span>
           </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={riskTrend} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
-              <defs>
-                <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#1565C0" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#1565C0" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-              <YAxis domain={[40, 100]} tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone"
-                dataKey="score"
-                stroke="#1565C0"
-                strokeWidth={2}
-                fill="url(#riskGrad)"
-                dot={{ r: 3, fill: "#1565C0", strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: "#1565C0" }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
 
-        {/* Loan amount over time */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm font-semibold text-gray-900">Loan amount applied</p>
-              <p className="text-xs text-gray-400">Cumulative (₹)</p>
-            </div>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-[#1565C0] border border-blue-100 font-medium">
-              ₹2,00,000 total
-            </span>
-          </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={loanActivity} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false}
-                tickFormatter={(v) => v === 0 ? "0" : `₹${v / 1000}K`} />
-              <Tooltip content={<CustomTooltip prefix="₹" />} />
-              <Bar dataKey="amount" fill="#1565C0" radius={[6, 6, 0, 0]} opacity={0.85} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-      </div>
-
-      {/* ── Bottom row ─────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* Recent activity */}
-        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-gray-900">Recent activity</p>
-            <button className="text-xs text-[#1565C0] font-medium hover:underline">View all</button>
-          </div>
-          <div className="space-y-3">
-            {recentActivity.map(({ id, title, desc, time, status, icon: Icon }) => (
-              <div key={id} className="flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${statusStyles[status]}`}>
-                  <Icon size={14} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{title}</p>
-                  <p className="text-xs text-gray-400">{desc}</p>
-                </div>
-                <span className="text-xs text-gray-300 shrink-0 mt-0.5">{time}</span>
-              </div>
+          <nav className="space-y-1">
+            {navItems.map(({ label, icon: Icon, active }) => (
+              <button
+                key={label}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
+                  active
+                    ? "bg-white text-[#071a3f] shadow-sm"
+                    : "text-blue-100 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <Icon size={17} />
+                <span className="font-medium">{label}</span>
+              </button>
             ))}
+          </nav>
+
+          <div className="mt-8 rounded-lg border border-white/10 bg-white/10 p-4">
+            <p className="text-sm font-semibold">Need quick help?</p>
+            <p className="mt-2 text-xs leading-relaxed text-blue-100">
+              A loan advisor is available for your application review.
+            </p>
+            <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#071a3f]">
+              Start chat <ArrowRight size={14} />
+            </button>
           </div>
-        </div>
 
-        {/* Loan status snapshot */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 flex flex-col gap-4">
-          <p className="text-sm font-semibold text-gray-900">Loan status</p>
+          <button className="mt-6 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-200 hover:bg-red-500/10">
+            <LogOut size={17} />
+            Logout
+          </button>
+        </aside>
 
-          <div className="flex flex-col gap-2">
-            {[
-              { label: "Application",  done: true  },
-              { label: "Documents",    done: true  },
-              { label: "Verification", done: false },
-              { label: "Approval",     done: false },
-              { label: "Disbursal",    done: false },
-            ].map(({ label, done }, i, arr) => (
-              <div key={label} className="flex items-center gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                    done ? "bg-[#1565C0] border-[#1565C0]" : "bg-white border-gray-200"
-                  }`}>
-                    {done && <CheckCircle2 size={11} className="text-white" />}
+        <main className="min-w-0">
+          <header className="sticky top-0 z-10 border-b border-white/70 bg-white/85 px-4 py-4 backdrop-blur md:px-8">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-[#43567C]">Welcome back, Rahul</p>
+                <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
+                  Your loan cockpit is ready
+                </h1>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="hidden items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 md:flex">
+                  <Search size={16} className="text-slate-400" />
+                  <input
+                    className="w-52 bg-transparent text-sm outline-none placeholder:text-slate-400"
+                    placeholder="Search applications"
+                  />
+                </div>
+                <button className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600">
+                  <Bell size={17} />
+                  <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-red-500" />
+                </button>
+                <button
+                  onClick={() => navigate("/user/apply-loan")}
+                  className="flex items-center gap-2 rounded-lg bg-[#43567C] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-900"
+                >
+                  Apply loan <ArrowRight size={15} />
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div className="px-4 py-6 md:px-8">
+            <section>
+              <div className="overflow-hidden rounded-lg bg-[#43567c] text-white shadow-sm">
+                <div className="grid gap-6 p-6 lg:grid-cols-[1fr_260px]">
+                  <div>
+                    <div className="mb-5 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-100">
+                        Verification in progress
+                      </span>
+                      <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100">
+                        Application ID CP-2048
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-blue-100">Home loan application</p>
+                    <h2 className="mt-2 max-w-xl text-3xl font-bold leading-tight">
+                      Rs. 20,00,000 request is 64% complete
+                    </h2>
+                    <p className="mt-3 max-w-2xl text-sm leading-relaxed text-blue-100">
+                      Your profile is strong. Complete the last address proof step to keep approval on track for the next review window.
+                    </p>
+
+                    <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                      {[
+                        ["Expected EMI", "Rs. 18.2K"],
+                        ["Tenure", "12 years"],
+                        ["Review date", "18 Jun"],
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-lg border border-white/10 bg-white/10 p-3">
+                          <p className="text-xs text-blue-100">{label}</p>
+                          <p className="mt-1 text-lg font-bold">{value}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  {i < arr.length - 1 && (
-                    <div className={`w-px h-5 ${done ? "bg-[#1565C0]" : "bg-gray-200"}`} />
-                  )}
+
+                  <div className="rounded-lg border border-white/10 bg-white/10 p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">Approval readiness</p>
+                      <span className="text-2xl font-bold">76</span>
+                    </div>
+                    <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/15">
+                      <div className="h-full w-[76%] rounded-full bg-emerald-400" />
+                    </div>
+                    <div className="mt-5 space-y-3">
+                      {[
+                        ["Credit history", "Good"],
+                        ["Income stability", "Strong"],
+                        ["Document health", "Action needed"],
+                      ].map(([label, value]) => (
+                        <div key={label} className="flex items-center justify-between text-sm">
+                          <span className="text-blue-100">{label}</span>
+                          <span className="font-semibold">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <span className={`text-xs font-medium ${done ? "text-gray-800" : "text-gray-400"}`}>
-                  {label}
-                </span>
               </div>
-            ))}
-          </div>
+            </section>
 
-          <div className="mt-auto pt-2 border-t border-gray-100">
-            <p className="text-xs text-gray-400">Current stage</p>
-            <p className="text-sm font-semibold text-amber-600 mt-0.5">Document Verification</p>
-            <p className="text-xs text-gray-400 mt-0.5">Est. 2–3 business days</p>
-          </div>
-        </div>
+            <section className="mt-4 grid gap-4 md:grid-cols-3">
+              <MetricCard
+                label="Active loans"
+                value="1"
+                detail="Home loan under verification"
+                icon={FileText}
+                tone="bg-blue-50 text-blue-700"
+              />
+              <MetricCard
+                label="Risk score"
+                value="76"
+                detail="4 points better than last month"
+                icon={ShieldCheck}
+                tone="bg-emerald-50 text-emerald-700"
+              />
+              <MetricCard
+                label="Docs uploaded"
+                value="3 / 5"
+                detail="Address proof and bank PDF pending"
+                icon={Upload}
+                tone="bg-amber-50 text-amber-700"
+              />
+            </section>
 
+            <section className="mt-4 grid gap-4 xl:grid-cols-[1fr_360px]">
+              <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <SectionHeader title="Risk score trend" subtitle="Your approval profile over six months" />
+                <ResponsiveContainer width="100%" height={240}>
+                  <AreaChart data={riskTrend} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="riskGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#43567C" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#43567C" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[40, 100]} tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="score"
+                      stroke="#43567C"
+                      strokeWidth={3}
+                      fill="url(#riskGradient)"
+                      dot={{ r: 3, fill: "#43567C", strokeWidth: 0 }}
+                      activeDot={{ r: 5, fill: "#43567C" }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <SectionHeader title="Document health" subtitle="Current upload completion" />
+                <div className="flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie data={documentMix} dataKey="value" innerRadius={58} outerRadius={78} paddingAngle={4}>
+                        {documentMix.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-emerald-50 p-3">
+                    <p className="text-xs text-emerald-700">Completed</p>
+                    <p className="mt-1 text-xl font-bold text-emerald-800">3</p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 p-3">
+                    <p className="text-xs text-amber-700">Pending</p>
+                    <p className="mt-1 text-xl font-bold text-amber-800">2</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="mt-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+              <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <SectionHeader title="Application timeline" subtitle="Where your loan stands right now" action="View all" />
+                <div className="space-y-4">
+                  {[
+                    { label: "Application submitted", done: true },
+                    { label: "Documents collected", done: true },
+                    { label: "Income verification", done: true },
+                    { label: "Address proof check", done: false },
+                    { label: "Final approval", done: false },
+                  ].map(({ label, done }, index, arr) => (
+                    <div key={label} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <div className={`flex h-7 w-7 items-center justify-center rounded-full border-2 ${
+                          done ? "border-blue-700 bg-blue-700 text-white" : "border-slate-200 bg-white text-slate-300"
+                        }`}>
+                          {done ? <CheckCircle2 size={15} /> : <Clock size={14} />}
+                        </div>
+                        {index < arr.length - 1 && (
+                          <div className={`h-7 w-px ${done ? "bg-blue-700" : "bg-slate-200"}`} />
+                        )}
+                      </div>
+                      <div className="pt-1">
+                        <p className={`text-sm font-semibold ${done ? "text-slate-900" : "text-slate-400"}`}>
+                          {label}
+                        </p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {done ? "Completed" : "Waiting for action"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <SectionHeader title="Recent activity" subtitle="Latest movement on your profile" />
+                <div className="space-y-3">
+                  {recentActivity.map(({ title, desc, time, status, icon: Icon }) => (
+                    <div key={title} className="flex gap-3 rounded-lg border border-slate-100 p-3">
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${statusStyles[status]}`}>
+                        <Icon size={16} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-bold text-slate-900">{title}</p>
+                          <span className="shrink-0 text-xs text-slate-400">{time}</span>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-500">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="mt-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-950">Personalized recommendation</h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Lower the processing risk by submitting one more stable address proof.
+                    </p>
+                  </div>
+                  <button className="flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white">
+                    Fix now <ArrowRight size={15} />
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
       </div>
     </div>
   );

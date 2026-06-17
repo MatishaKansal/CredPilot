@@ -117,7 +117,7 @@ const Login = () => {
           </div>
 
           <div className="flex justify-end">
-            <Link to="/forgot-password" className="text-xs sm:text-sm text-blue-700 font-medium hover:text-blue-900">
+            <Link to="/forgot-password" className="text-xs sm:text-sm text-[#43567C] font-medium hover:text-blue-900">
               Forgot Password?
             </Link>
           </div>
@@ -125,7 +125,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-700 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-900 disabled:opacity-50 sm:text-base"
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#43567C] py-3 text-sm font-semibold text-white transition-all hover:bg-blue-900 disabled:opacity-50 sm:text-base"
           >
             {loading ? "Logging in..." : "Login"}
             {!loading && <ArrowRight size={18} />}
@@ -149,7 +149,7 @@ const Login = () => {
 
         <p className="text-center text-xs sm:text-sm text-slate-500 mt-3 sm:mt-4">
           Don't have an account?{" "}
-          <Link to="/register" className="text-blue-700 font-semibold hover:text-blue-900">
+          <Link to="/register" className="text-[#43567C] font-semibold hover:text-blue-900">
             Register
           </Link>
         </p>

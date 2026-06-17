@@ -43,13 +43,18 @@ const Register = () => {
 
     setLoading(true);
     setError("");
+    setSuccess(false);
 
     try {
       await registerUser(form.fullName, form.email, form.phone, form.password);
       setSuccess(true);
       setTimeout(() => navigate("/login"), 2000);
-    } catch {
-      setError("Registration failed. Please try again.");
+    } catch (err) {
+      const message =
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Registration failed. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -166,7 +171,7 @@ const Register = () => {
           <button
             type="submit"
             disabled={loading || success}
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-700 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-900 disabled:opacity-50 sm:text-base"
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#43567C] py-3 text-sm font-semibold text-white transition-all hover:bg-blue-900 disabled:opacity-50 sm:text-base"
           >
             {loading ? "Creating account…" : "Create Account"}
             {!loading && <ArrowRight size={18} />}
@@ -175,7 +180,7 @@ const Register = () => {
 
         <p className="text-center text-xs sm:text-sm text-slate-500 mt-3 sm:mt-4">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-700 font-semibold hover:text-blue-900">
+          <Link to="/login" className="text-[#43567C] font-semibold hover:text-blue-900">
             Login
           </Link>
         </p>

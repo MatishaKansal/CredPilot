@@ -53,8 +53,22 @@ const Login = () => {
       login(data.user, data.token);
       if (data.user.role === "officer") navigate("/employee/dashboard");
       if (data.user.role === "admin") navigate("/admin/dashboard");
-    } catch {
-      setError("Invalid email or password");
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      if (detail?.includes("This account is not registered as officer")) {
+        try {
+          const adminData = await loginUser(email, password, "admin");
+          login(adminData.user, adminData.token);
+          if (adminData.user.role === "admin") navigate("/admin/dashboard");
+          return;
+        } catch (adminErr) {
+          const adminDetail = adminErr?.response?.data?.detail;
+          setError(adminDetail || adminErr?.message || "Invalid email or password");
+          return;
+        }
+      }
+
+      setError(detail || err?.message || "Invalid email or password");
     } finally {
       setBankLoading(false);
     }

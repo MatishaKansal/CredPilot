@@ -1,4 +1,8 @@
 import {
+  useEffect,
+  useState,
+} from "react";
+import {
   Area,
   AreaChart,
   Bar,
@@ -23,15 +27,17 @@ import {
   LayoutDashboard,
   LogOut,
   Search,
-  Settings,
   ShieldCheck,
   TrendingUp,
   User,
+  UserCog,
   Users,
   UserCheck,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
+import { getAdminDashboard } from "../../services/adminAPI";
+import { getStoredAdminDetailsComplete } from "../../utils/adminDetails";
 
 const disbursalTrend = [
   { month: "Jan", amount: 4.2 },
@@ -89,13 +95,13 @@ const recentAlerts = [
 ];
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, active: true },
-  { label: "Applications", icon: FileText },
-  { label: "Employees", icon: Users },
-  { label: "Customers", icon: User },
-  { label: "Reports", icon: TrendingUp },
-  { label: "Risk Engine", icon: ShieldCheck },
-  { label: "Settings", icon: Settings },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard", active: true, open: true },
+  { label: "Details", icon: UserCog, path: "/admin/details", open: true },
+  { label: "Applications", icon: FileText, path: "/admin/applications" },
+  { label: "Employees", icon: Users, path: "/admin/employees" },
+  { label: "Customers", icon: User, path: "/admin/customers" },
+  { label: "Reports", icon: TrendingUp, path: "/admin/reports" },
+  { label: "Risk Engine", icon: ShieldCheck, path: "/admin/risk" },
 ];
 
 const statusStyles = {
@@ -149,6 +155,32 @@ const CustomTooltip = ({ active, payload, label, prefix = "" }) => {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    employeeCount: 5,
+    adminCount: 0,
+    officerCount: 5,
+    customerCount: 0,
+    assignedCustomerCount: 0,
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDashboardStats = async () => {
+      try {
+        const data = await getAdminDashboard();
+        setStats(data);
+      } catch {
+        setStatsLoading(false);
+        return;
+      }
+
+      setStatsLoading(false);
+    };
+
+    loadDashboardStats();
+  }, []);
+
+  const activeEmployeeCount = statsLoading ? "..." : stats.employeeCount;
 
   return (
     <div className="min-h-screen bg-[#eef3f8] text-slate-900">
@@ -164,9 +196,17 @@ const AdminDashboard = () => {
           </div>
 
           <nav className="space-y-1">
-            {navItems.map(({ label, icon: Icon, active }) => (
+            {navItems.map(({ label, icon: Icon, path, active, open }) => (
               <button
                 key={label}
+                onClick={() => {
+                  if (!open && !getStoredAdminDetailsComplete()) {
+                    navigate("/admin/details");
+                    return;
+                  }
+
+                  navigate(path);
+                }}
                 className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
                   active
                     ? "bg-white text-[#071a3f] shadow-sm"
@@ -189,7 +229,13 @@ const AdminDashboard = () => {
             </button>
           </div>
 
-          <button className="mt-6 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-200 hover:bg-red-500/10">
+          <button
+            onClick={() => {
+              localStorage.clear();
+              navigate("/login");
+            }}
+            className="mt-6 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-200 hover:bg-red-500/10"
+          >
             <LogOut size={17} />
             Logout
           </button>
@@ -239,7 +285,7 @@ const AdminDashboard = () => {
                         On track — June target
                       </span>
                       <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100">
-                        5 active employees
+                        {activeEmployeeCount} active employees
                       </span>
                     </div>
 
@@ -308,8 +354,8 @@ const AdminDashboard = () => {
               />
               <MetricCard
                 label="Active employees"
-                value="5"
-                detail="1 SLA breach flagged"
+                value={activeEmployeeCount}
+                detail={`${stats.officerCount} officers and ${stats.adminCount} admins in DB`}
                 icon={Users}
                 tone="bg-amber-50 text-amber-700"
               />

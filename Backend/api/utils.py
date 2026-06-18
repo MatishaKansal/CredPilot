@@ -1,7 +1,7 @@
 import random
 from database import supabase
 
-def generate_unique_id(prefix):
+def generate_unique_id(prefix, table_name="users", id_column="user_id"):
 
     while True:
 
@@ -11,9 +11,9 @@ def generate_unique_id(prefix):
 
         result = (
             supabase
-            .table("users")
-            .select("user_id")
-            .eq("user_id", generated_id)
+            .table(table_name)
+            .select(id_column)
+            .eq(id_column, generated_id)
             .execute()
         )
 

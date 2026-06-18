@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { loginUser } from "../../services/authAPI";
 import { Mail, Lock, Eye, EyeOff, Building2, ArrowRight } from "lucide-react";
 import logo from "../../assets/logo.png";
+import { setStoredAdminDetailsComplete } from "../../utils/adminDetails";
 
 const Login = () => {
   const { login } = useAuth();
@@ -31,7 +32,10 @@ const Login = () => {
       login(data.user, data.token);
       if (data.user.role === "applicant") navigate("/user/dashboard");
       if (data.user.role === "officer") navigate("/employee/dashboard");
-      if (data.user.role === "admin") navigate("/admin/dashboard");
+      if (data.user.role === "admin") {
+        setStoredAdminDetailsComplete(false);
+        navigate("/admin/dashboard");
+      }
     } catch {
       setError("Invalid email or password");
     } finally {
@@ -52,14 +56,20 @@ const Login = () => {
       const data = await loginUser(email, password, "officer");
       login(data.user, data.token);
       if (data.user.role === "officer") navigate("/employee/dashboard");
-      if (data.user.role === "admin") navigate("/admin/dashboard");
+      if (data.user.role === "admin") {
+        setStoredAdminDetailsComplete(false);
+        navigate("/admin/dashboard");
+      }
     } catch (err) {
       const detail = err?.response?.data?.detail;
       if (detail?.includes("This account is not registered as officer")) {
         try {
           const adminData = await loginUser(email, password, "admin");
           login(adminData.user, adminData.token);
-          if (adminData.user.role === "admin") navigate("/admin/dashboard");
+          if (adminData.user.role === "admin") {
+            setStoredAdminDetailsComplete(false);
+            navigate("/admin/dashboard");
+          }
           return;
         } catch (adminErr) {
           const adminDetail = adminErr?.response?.data?.detail;

@@ -1,8 +1,6 @@
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   Pie,
@@ -15,22 +13,15 @@ import {
 import {
   AlertCircle,
   ArrowRight,
-  Bell,
   CheckCircle2,
   Clock,
-  ClipboardList,
   FileText,
-  LayoutDashboard,
-  LogOut,
-  MessageCircle,
-  Search,
-  ShieldCheck,
   TrendingUp,
-  User,
   Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../../assets/logo.png";
+import { useAuth } from "../../context/AuthContext";
 
 const applicationsTrend = [
   { month: "Jan", count: 42 },
@@ -78,14 +69,6 @@ const recentApplications = [
   },
 ];
 
-const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, active: true },
-  { label: "Applications", icon: FileText },
-  { label: "Reviews", icon: ClipboardList },
-  { label: "Customers", icon: Users },
-  { label: "Reports", icon: TrendingUp },
-  { label: "Profile", icon: User },
-];
 
 const statusStyles = {
   success: "border-emerald-100 bg-emerald-50 text-emerald-700",
@@ -137,86 +120,22 @@ const CustomTooltip = ({ active, payload, label, prefix = "" }) => {
 
 const EmployeeDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [dashData, setDashData] = useState(null);
+
+  useEffect(() => {
+    if (!user?.user_id) return;
+    fetch(`http://localhost:8000/employee/${user.user_id}/dashboard`)
+      .then((res) => res.json())
+      .then((data) => setDashData(data))
+      .catch(() => {});
+  }, [user?.user_id]);
+
+  const firstName = (dashData?.employee?.fullName || user?.name || "").split(" ")[0];
+  const assignedCustomerCount = dashData?.assignedCustomerCount ?? "—";
 
   return (
-    <div className="min-h-screen bg-[#eef3f8] text-slate-900">
-      <div className="grid min-h-screen lg:grid-cols-[248px_1fr]">
-        {/* Sidebar */}
-        <aside className="hidden border-r border-white/60 bg-[#071a3f] px-4 py-5 text-white lg:block">
-          <div className="mb-8 flex items-center gap-3 px-2">
-            <img src={logo} alt="CredPilot" className="h-9 w-9 object-contain" />
-            <div>
-              <p className="text-lg font-bold leading-none">CredPilot</p>
-              <p className="mt-1 text-xs text-blue-200">Employee workspace</p>
-            </div>
-          </div>
-
-          <nav className="space-y-1">
-            {navItems.map(({ label, icon: Icon, active }) => (
-              <button
-                key={label}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
-                  active
-                    ? "bg-white text-[#071a3f] shadow-sm"
-                    : "text-blue-100 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <Icon size={17} />
-                <span className="font-medium">{label}</span>
-              </button>
-            ))}
-          </nav>
-
-          <div className="mt-8 rounded-lg border border-white/10 bg-white/10 p-4">
-            <p className="text-sm font-semibold">Today's queue</p>
-            <p className="mt-2 text-xs leading-relaxed text-blue-100">
-              You have 7 applications awaiting your review.
-            </p>
-            <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#071a3f]">
-              Review now <ArrowRight size={14} />
-            </button>
-          </div>
-
-          <button className="mt-6 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-200 hover:bg-red-500/10">
-            <LogOut size={17} />
-            Logout
-          </button>
-        </aside>
-
-        {/* Main */}
-        <main className="min-w-0">
-          <header className="sticky top-0 z-10 border-b border-white/70 bg-white/85 px-4 py-4 backdrop-blur md:px-8">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-[#43567C]">Good morning, Arjun</p>
-                <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
-                  Your review queue is ready
-                </h1>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="hidden items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 md:flex">
-                  <Search size={16} className="text-slate-400" />
-                  <input
-                    className="w-52 bg-transparent text-sm outline-none placeholder:text-slate-400"
-                    placeholder="Search applications"
-                  />
-                </div>
-                <button className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600">
-                  <Bell size={17} />
-                  <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-red-500" />
-                </button>
-                <button
-                  onClick={() => navigate("/employee/reviews")}
-                  className="flex items-center gap-2 rounded-lg bg-[#43567C] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-900"
-                >
-                  Start review <ArrowRight size={15} />
-                </button>
-              </div>
-            </div>
-          </header>
-
-          <div className="px-4 py-6 md:px-8">
+    <div className="px-4 py-6 md:px-8">
             {/* Hero banner */}
             <section>
               <div className="overflow-hidden rounded-lg bg-[#43567c] text-white shadow-sm">
@@ -231,7 +150,7 @@ const EmployeeDashboard = () => {
                       </span>
                     </div>
 
-                    <p className="text-sm text-blue-100">Employee performance snapshot</p>
+                    <p className="text-sm text-blue-100">Welcome back, {firstName} · Employee performance snapshot</p>
                     <h2 className="mt-2 max-w-xl text-3xl font-bold leading-tight">
                       68 applications processed this month
                     </h2>
@@ -303,7 +222,7 @@ const EmployeeDashboard = () => {
               />
               <MetricCard
                 label="Active customers"
-                value="124"
+                value={assignedCustomerCount}
                 detail="In your portfolio"
                 icon={Users}
                 tone="bg-purple-50 text-purple-700"
@@ -455,9 +374,6 @@ const EmployeeDashboard = () => {
                 </div>
               </div>
             </section>
-          </div>
-        </main>
-      </div>
     </div>
   );
 };

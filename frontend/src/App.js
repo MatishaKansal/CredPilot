@@ -11,7 +11,10 @@ import AdminEmployees from "./pages/Admin/AdminEmployees";
 import AdminCustomers from "./pages/Admin/AdminCustomers";
 import AdminPlaceholder from "./pages/Admin/AdminPlaceholder";
 import AdminRequireDetails from "./pages/Admin/AdminRequireDetails";
+import EmployeeLayout from "./pages/Employee/EmployeeLayout";
 import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
+import EmployeeDetails from "./pages/Employee/EmployeeDetails";
+import EmployeeCustomers from "./pages/Employee/EmployeeCustomers";
 
 function App() {
   return (
@@ -23,9 +26,11 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/landing" element={<LandingPage />} />
           <Route path="/user/dashboard" element={<UserDashboard />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+          {/* Admin */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="details" element={<AdminDetails />} />
             <Route path="applications" element={<AdminRequireDetails><AdminPlaceholder title="Applications" /></AdminRequireDetails>} />
             <Route path="employees" element={<AdminRequireDetails><AdminEmployees /></AdminRequireDetails>} />
@@ -34,11 +39,21 @@ function App() {
             <Route path="risk" element={<AdminRequireDetails><AdminPlaceholder title="Risk Engine" /></AdminRequireDetails>} />
             <Route path="*" element={<Navigate to="/admin/dashboard" />} />
           </Route>
-          <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+
+          {/* Employee */}
+          <Route path="/employee" element={<EmployeeLayout />}>
+            <Route index element={<Navigate to="/employee/dashboard" />} />
+            <Route path="dashboard" element={<EmployeeDashboard />} />
+            <Route path="details" element={<EmployeeDetails />} />
+            <Route path="customers" element={<EmployeeCustomers />} />
+            <Route path="applications" element={<AdminPlaceholder title="Applications" />} />
+            <Route path="reviews" element={<AdminPlaceholder title="Reviews" />} />
+            <Route path="reports" element={<AdminPlaceholder title="Reports" />} />
+            <Route path="*" element={<Navigate to="/employee/dashboard" />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
-   
   );
 }
 

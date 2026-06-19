@@ -333,13 +333,23 @@ def update_employee(employee_id: str, staff: StaffUpdateRequest):
             detail="Role must be officer or admin"
         )
 
-    updated = (
-        supabase
-        .table("employees")
-        .update(staff_payload(staff))
-        .eq("id", employee_id)
-        .execute()
-    )
+    try:
+        updated = (
+            supabase
+            .table("employees")
+            .update(staff_payload(staff))
+            .eq("id", employee_id)
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unable to save details. Supabase said: "
+                f"{str(exc)}. If this mentions schema cache or missing columns, "
+                "run Backend/admin_schema.sql in Supabase again."
+            ),
+        ) from exc
 
     if not updated.data:
         raise HTTPException(
@@ -389,6 +399,77 @@ def list_customers():
     return {
         "customers": [normalize_customer(row) for row in (result.data or [])]
     }
+
+
+@app.get("/employee/{employee_id}/dashboard")
+def employee_dashboard(employee_id: str):
+    employee = (
+        supabase
+        .table("employees")
+        .select("*")
+        .eq("id", employee_id)
+        .execute()
+    )
+
+    if not employee.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found"
+        )
+
+    try:
+        customers = (
+            supabase
+            .table("users")
+            .select("user_id")
+            .eq("role", "applicant")
+            .eq("assigned_employee_id", employee_id)
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unable to load assigned customers. Run Backend/admin_schema.sql "
+                "in Supabase so users has assigned_employee_id."
+            ),
+        ) from exc
+
+    return {
+        "employee": normalize_employee(employee.data[0]),
+        "assignedCustomerCount": len(customers.data or []),
+    }
+
+
+@app.get("/employee/{employee_id}/customers")
+def employee_customers(employee_id: str):
+    try:
+        result = (
+            supabase
+            .table("users")
+            .select("*")
+            .eq("role", "applicant")
+            .eq("assigned_employee_id", employee_id)
+            .order("full_name")
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unable to load assigned customers. Run Backend/admin_schema.sql "
+                "in Supabase so users has assigned_employee_id."
+            ),
+        ) from exc
+
+    return {
+        "customers": [normalize_customer(row) for row in (result.data or [])]
+    }
+
+
+@app.patch("/employee/{employee_id}/details")
+def update_employee_details(employee_id: str, staff: StaffUpdateRequest):
+    return update_employee(employee_id, staff)
 
 
 @app.patch("/admin/customers/{customer_id}/assign")

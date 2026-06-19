@@ -1,70 +1,114 @@
-# Getting Started with Create React App
+# CredPilot
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Predict. Trust. Proceed.**
 
-## Available Scripts
+An AI-powered loan default prediction platform for microfinance institutions, built with three role-based portals — applicants, loan officers, and bank admins — backed by an explainable ML model and an LLM assistant.
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## Problem statement
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Microfinance institutions serve borrowers who have no formal credit history (no CIBIL score, no credit card), making loan risk assessment almost entirely manual and inconsistent. Loan officers rely on gut feeling, leading to avoidable defaults and inconsistent approval decisions across branches. CredPilot replaces this with a data-driven, explainable risk score — without requiring any credit bureau data.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Key features
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Risk prediction** — XGBoost model trained on 300K+ historical loan records, achieving an AUC of 0.73 using only fields a field officer can realistically collect (income, employment, family status, past repayment behavior).
+- **Explainability (SHAP)** — every prediction comes with a plain-language breakdown of which factors increased or decreased the applicant's risk, instead of a black-box score.
+- **Three role-based portals**:
+  - **Applicant** — apply for a loan, check eligibility, track application status, chat with an AI assistant for guidance.
+  - **Loan officer** — review a queue of applications, view risk scores and SHAP explanations, approve/reject/request documents.
+  - **Admin** — monitor approval trends, audit officer performance, and run a fairness audit across gender/education/region.
+  - 
+- **LLM assistant** — converts SHAP values and applicant data into plain-language explanations (e.g. "why was I rejected", "summarise this week's risk trends").
+- **Fairness audit** — checks whether the model's predictions are biased by gender, education level, or region — a step most student ML projects skip entirely.
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Tech stack
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+| Layer | Technology |
+|---|---|
+| ML model | XGBoost, SHAP, scikit-learn |
+| Backend | FastAPI, SQLite |
+| Frontend | React, Tailwind CSS, React Router, Axios |
+| LLM | Claude / Gemini API |
+| Data | [Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk) (Kaggle) |
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## Project structure
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```
+credpilot/
+├── notebooks/          # Data exploration, cleaning, model training (Jupyter)
+├── model/              # Saved model.pkl and explainer.pkl
+├── backend/
+│   ├── main.py          # FastAPI entry point
+│   ├── database.py      # SQLite schema and connection
+│   ├── llm.py            # LLM API integration
+│   ├── ml/
+│   │   └── predict.py    # Model loading and prediction logic
+│   └── routers/
+│       ├── applicant.py
+│       ├── officer.py
+│       └── admin.py
+├── frontend/
+│   └── src/
+│       ├── components/   # Reusable UI (StatCard, DataTable, ChatWindow, Sidebar, etc.)
+│       ├── portals/      # Role-specific pages (user, employee, admin)
+│       ├── pages/        # Public pages (Login, Register)
+│       ├── services/     # API calls (Axios)
+│       ├── context/      # Auth state
+│       └── routes/       # Route definitions and role-based protection
+└── README.md
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Model performance
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+| Metric | Score |
+|---|---|
+| AUC-ROC | 0.73 |
+| Recall (defaulters) | 0.55 |
+| Precision (non-defaulters) | 0.94 |
 
-## Learn More
+The dataset's known competitive ceiling (per the original $70,000 Kaggle competition) is approximately 0.80–0.81, achieved using all 7 relational tables and extensive ensembling. This project uses 3 tables and a focused feature set chosen for real-world collectibility by a field loan officer — prioritizing interpretability and practical deployability over a marginal AUC gain.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Getting started
 
-### Code Splitting
+### Backend
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Frontend
+```bash
+cd frontend
+npm install
+npm start
+```
 
-### Analyzing the Bundle Size
+### Model training (optional — pre-trained model included)
+```bash
+cd notebooks
+jupyter notebook
+# Run 01_test_setup.ipynb through 05_shap_explainability.ipynb in order
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## Future scope
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- Multi-language support for the applicant chat assistant (Hindi and regional languages)
+- Mobile-first responsive design
+- Integration with all 7 Home Credit data tables for improved AUC
+- Real bank deployment pilot with anonymized live data
 
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---

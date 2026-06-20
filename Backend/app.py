@@ -11,10 +11,13 @@ from api.schemas import (
     StaffCreateRequest,
     StaffUpdateRequest,
     CustomerAssignmentRequest,
+    ApplicantUpdateRequest,
+    ApplicationCreateRequest,
 )
 
 from api.utils import (
-    generate_unique_id
+    generate_unique_id,
+    generate_application_id,
 )
 
 app = FastAPI()
@@ -71,14 +74,97 @@ def staff_payload(staff):
 
 
 def normalize_customer(row):
+    return normalize_applicant(row)
+
+
+def normalize_applicant(row):
     return {
         "userId": row.get("user_id"),
         "fullName": row.get("full_name", ""),
         "email": row.get("email", ""),
         "phone": row.get("phone", ""),
         "role": row.get("role", ""),
+        "address": row.get("address", ""),
+        "city": row.get("city", ""),
+        "state": row.get("state", ""),
+        "pincode": row.get("pincode", ""),
         "assignedEmployeeId": row.get("assigned_employee_id"),
         "createdAt": row.get("created_at"),
+    }
+
+
+def applicant_payload(applicant):
+    return {
+        "full_name": applicant.fullName,
+        "address": applicant.address,
+        "city": applicant.city,
+        "state": applicant.state,
+        "pincode": applicant.pincode,
+    }
+
+
+
+def normalize_application(row, applicant=None):
+    return {
+        "applicationId": row.get("application_id"),
+        "userId": row.get("user_id"),
+        "status": row.get("status", "pending"),
+        "fullName": row.get("full_name", ""),
+        "dateOfBirth": row.get("date_of_birth"),
+        "gender": row.get("gender", ""),
+        "maritalStatus": row.get("marital_status", ""),
+        "numChildren": row.get("num_children", 0),
+        "educationLevel": row.get("education_level", ""),
+        "phoneNumber": row.get("phone_number", ""),
+        "address": row.get("address", ""),
+        "employmentType": row.get("employment_type", ""),
+        "yearsEmployed": row.get("years_employed", 0),
+        "monthlyIncome": row.get("monthly_income", 0),
+        "ownsCar": row.get("owns_car", False),
+        "ownsHouse": row.get("owns_house", False),
+        "regionType": row.get("region_type", ""),
+        "loanAmount": row.get("loan_amount", 0),
+        "loanPurpose": row.get("loan_purpose", ""),
+        "tenureMonths": row.get("tenure_months", 0),
+        
+        "hasPastLoans": row.get("has_past_loans", False),
+        "numPastLoans": row.get("num_past_loans", 0),
+        "hadLatePayments": row.get("had_late_payments", False),
+        "existingOutstandingDebt": row.get("existing_outstanding_debt", 0),
+        "createdAt": row.get("created_at"),
+        "applicantName": applicant.get("full_name", row.get("full_name", "")) if applicant else row.get("full_name", ""),
+        "assignedEmployeeId": row.get("assigned_employee_id"),
+    }
+
+
+def application_insert_payload(user_id: str, application_id: str, body: ApplicationCreateRequest):
+    return {
+        "application_id": application_id,
+        "user_id": user_id,
+        "status": "pending",
+        "full_name": body.fullName,
+        "date_of_birth": body.dateOfBirth,
+        "gender": body.gender,
+        "marital_status": body.maritalStatus,
+        "num_children": body.numChildren,
+        "education_level": body.educationLevel,
+        "phone_number": body.phoneNumber,
+        "address": body.address,
+        "employment_type": body.employmentType,
+        
+        "years_employed": body.yearsEmployed,
+        "monthly_income": body.monthlyIncome,
+        "owns_car": body.ownsCar,
+        "owns_house": body.ownsHouse,
+        "region_type": body.regionType,
+        "loan_amount": body.loanAmount,
+        "loan_purpose": body.loanPurpose,
+        "tenure_months": body.tenureMonths,
+        
+        "has_past_loans": body.hasPastLoans,
+        "num_past_loans": body.numPastLoans if body.hasPastLoans else 0,
+        "had_late_payments": body.hadLatePayments if body.hasPastLoans else False,
+        "existing_outstanding_debt": body.existingOutstandingDebt or 0,
     }
 
 
@@ -470,6 +556,277 @@ def employee_customers(employee_id: str):
 @app.patch("/employee/{employee_id}/details")
 def update_employee_details(employee_id: str, staff: StaffUpdateRequest):
     return update_employee(employee_id, staff)
+
+
+@app.get("/applicant/{user_id}/profile")
+def get_applicant_profile(user_id: str):
+    result = (
+        supabase
+        .table("users")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("role", "applicant")
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Applicant not found"
+        )
+
+    return {
+        "applicant": normalize_applicant(result.data[0])
+    }
+
+
+@app.patch("/applicant/{user_id}/details")
+def update_applicant_details(user_id: str, applicant: ApplicantUpdateRequest):
+    try:
+        updated = (
+            supabase
+            .table("users")
+            .update(applicant_payload(applicant))
+            .eq("user_id", user_id)
+            .eq("role", "applicant")
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unable to save details. Supabase said: "
+                f"{str(exc)}. If this mentions schema cache or missing columns, "
+                "run Backend/admin_schema.sql in Supabase again."
+            ),
+        ) from exc
+
+    if not updated.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Applicant not found"
+        )
+
+    return {
+        "message": "Profile updated",
+        "applicant": normalize_applicant(updated.data[0]),
+    }
+
+
+@app.get("/applicant/{user_id}/dashboard")
+def applicant_dashboard(user_id: str):
+    result = (
+        supabase
+        .table("users")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("role", "applicant")
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Applicant not found"
+        )
+
+    applications = (
+        supabase
+        .table("loan_applications")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    return {
+        "applicant": normalize_applicant(result.data[0]),
+        "applications": [normalize_application(row) for row in (applications.data or [])],
+        "activeApplicationCount": len(applications.data or []),
+    }
+
+
+@app.post("/applicant/{user_id}/applications")
+def create_application(user_id: str, body: ApplicationCreateRequest):
+    applicant = (
+        supabase
+        .table("users")
+        .select("user_id")
+        .eq("user_id", user_id)
+        .eq("role", "applicant")
+        .execute()
+    )
+
+    if not applicant.data:
+        raise HTTPException(status_code=404, detail="Applicant not found")
+
+    application_id = generate_application_id(body.loanPurpose)
+
+    try:
+        inserted = (
+            supabase
+            .table("loan_applications")
+            .insert(application_insert_payload(user_id, application_id, body))
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unable to save application. Supabase said: "
+                f"{str(exc)}. Run Backend/applications_schema.sql in Supabase first."
+            ),
+        ) from exc
+
+    row = inserted.data[0] if inserted.data else {"application_id": application_id, "user_id": user_id}
+    return {
+        "message": "Application submitted successfully",
+        "application": normalize_application(row),
+    }
+
+
+@app.get("/applicant/{user_id}/applications")
+def list_applicant_applications(user_id: str):
+    result = (
+        supabase
+        .table("loan_applications")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    return {
+        "applications": [normalize_application(row) for row in (result.data or [])]
+    }
+
+
+@app.get("/admin/applications")
+def list_admin_applications():
+    try:
+        applications = (
+            supabase
+            .table("loan_applications")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unable to load applications. Run Backend/applications_schema.sql in Supabase first."
+            ),
+        ) from exc
+
+    users = (
+        supabase
+        .table("users")
+        .select("user_id,full_name,assigned_employee_id")
+        .eq("role", "applicant")
+        .execute()
+    )
+    user_map = {row["user_id"]: row for row in (users.data or [])}
+
+    return {
+        "applications": [
+            normalize_application(row, user_map.get(row.get("user_id")))
+            for row in (applications.data or [])
+        ]
+    }
+
+
+@app.get("/employee/{employee_id}/applications")
+def list_employee_applications(employee_id: str):
+    employee = (
+        supabase
+        .table("employees")
+        .select("id")
+        .eq("id", employee_id)
+        .execute()
+    )
+
+    if not employee.data:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    try:
+        applications = (
+            supabase
+            .table("loan_applications")
+            .select("*")
+            .eq("assigned_employee_id", employee_id)
+            .order("created_at", desc=True)
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unable to load applications. Run Backend/applications_schema.sql in Supabase first."
+            ),
+        ) from exc
+
+    return {
+        "applications": [
+            normalize_application(row)
+            for row in (applications.data or [])
+        ]
+    }
+
+
+@app.patch("/admin/applications/{application_id}/assign")
+def assign_application(application_id: str, assignment: CustomerAssignmentRequest):
+    employee = (
+        supabase
+        .table("employees")
+        .select("id,role")
+        .eq("id", assignment.employeeId)
+        .execute()
+    )
+
+    if not employee.data:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    if employee.data[0].get("role") != "officer":
+        raise HTTPException(
+            status_code=400,
+            detail="Applications can only be assigned to officers",
+        )
+
+    try:
+        updated = (
+            supabase
+            .table("loan_applications")
+            .update({"assigned_employee_id": assignment.employeeId})
+            .eq("application_id", application_id)
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unable to assign application. Run Backend/applications_schema.sql "
+                "in Supabase to add assigned_employee_id."
+            ),
+        ) from exc
+
+    if not updated.data:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    row = updated.data[0]
+    applicant = (
+        supabase
+        .table("users")
+        .select("user_id,full_name,assigned_employee_id")
+        .eq("user_id", row.get("user_id"))
+        .execute()
+    )
+    user_row = applicant.data[0] if applicant.data else None
+
+    return {
+        "message": "Application assigned",
+        "application": normalize_application(row, user_row),
+    }
 
 
 @app.patch("/admin/customers/{customer_id}/assign")

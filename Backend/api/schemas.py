@@ -38,3 +38,35 @@ class StaffUpdateRequest(BaseModel):
 
 class CustomerAssignmentRequest(BaseModel):
     employeeId: str
+
+
+class ApplicantUpdateRequest(BaseModel):
+    fullName: str
+    address: Optional[str] = ""
+    city: Optional[str] = ""
+    state: Optional[str] = ""
+    pincode: Optional[str] = ""
+
+
+class ApplicationCreateRequest(BaseModel):
+    fullName: str
+    dateOfBirth: str
+    gender: str
+    maritalStatus: str
+    numChildren: int = 0
+    educationLevel: str
+    phoneNumber: str
+    address: str
+    employmentType: str
+    yearsEmployed: float = 0
+    monthlyIncome: float
+    ownsCar: bool = False
+    ownsHouse: bool = False
+    regionType: str
+    loanAmount: float
+    loanPurpose: str
+    tenureMonths: int
+    hasPastLoans: bool = False
+    numPastLoans: int = 0
+    hadLatePayments: bool = False
+    existingOutstandingDebt: Optional[float] = 0

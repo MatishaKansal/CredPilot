@@ -41,3 +41,15 @@ export const assignCustomer = async (customerId, employeeId) => {
   });
   return response.data.customer;
 };
+
+export const assignApplication = async (applicationId, employeeId) => {
+  const response = await api.patch(`/admin/applications/${applicationId}/assign`, {
+    employeeId,
+  });
+  return response.data.application;
+};
+
+export const getApplications = async () => {
+  const response = await api.get("/admin/applications");
+  return response.data.applications;
+};

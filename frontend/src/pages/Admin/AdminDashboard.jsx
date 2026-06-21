@@ -30,60 +30,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import { getAdminDashboard } from "../../services/adminAPI";
 
-const disbursalTrend = [
-  { month: "Jan", amount: 4.2 },
-  { month: "Feb", amount: 5.8 },
-  { month: "Mar", amount: 5.1 },
-  { month: "Apr", amount: 7.4 },
-  { month: "May", amount: 8.9 },
-  { month: "Jun", amount: 8.1 },
-];
-
-const loanTypeMix = [
-  { name: "Home", value: 44, color: "#1d4ed8" },
-  { name: "Personal", value: 28, color: "#7c3aed" },
-  { name: "Car", value: 18, color: "#0891b2" },
-  { name: "Education", value: 10, color: "#059669" },
-];
-
-const employeePerformance = [
-  { name: "Arjun", approved: 38, rejected: 9 },
-  { name: "Meera", approved: 44, rejected: 6 },
-  { name: "Vikram", approved: 29, rejected: 14 },
-  { name: "Divya", approved: 51, rejected: 4 },
-  { name: "Rahul S.", approved: 33, rejected: 11 },
-];
-
-const recentAlerts = [
-  {
-    title: "Spike in rejection rate — Branch 3",
-    desc: "Rejection rate jumped from 12% to 34% in last 48 hours",
-    time: "Today, 9:00 AM",
-    status: "warning",
-    icon: AlertCircle,
-  },
-  {
-    title: "SLA breach — Vikram Kumar",
-    desc: "4 cases exceeded 2-day review window",
-    time: "Today, 8:30 AM",
-    status: "warning",
-    icon: Clock,
-  },
-  {
-    title: "Monthly target reached",
-    desc: "June disbursal crossed Rs. 8 Cr ahead of schedule",
-    time: "Yesterday",
-    status: "success",
-    icon: CheckCircle2,
-  },
-  {
-    title: "New employee onboarded",
-    desc: "Divya Menon activated on the platform",
-    time: "2 days ago",
-    status: "info",
-    icon: UserCheck,
-  },
-];
+const iconMap = {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  UserCheck,
+};
 
 const statusStyles = {
   success: "border-emerald-100 bg-emerald-50 text-emerald-700",
@@ -136,13 +88,7 @@ const CustomTooltip = ({ active, payload, label, prefix = "" }) => {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    employeeCount: 5,
-    adminCount: 0,
-    officerCount: 5,
-    customerCount: 0,
-    assignedCustomerCount: 0,
-  });
+  const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
@@ -151,17 +97,26 @@ const AdminDashboard = () => {
         const data = await getAdminDashboard();
         setStats(data);
       } catch {
+        setStats(null);
+      } finally {
         setStatsLoading(false);
-        return;
       }
-
-      setStatsLoading(false);
     };
 
     loadDashboardStats();
   }, []);
 
-  const activeEmployeeCount = statsLoading ? "..." : stats.employeeCount;
+  const activeEmployeeCount = statsLoading ? "..." : stats?.employeeCount ?? 0;
+  const disbursalTrend = stats?.disbursalTrend?.length ? stats.disbursalTrend : [{ month: "—", amount: 0 }];
+  const loanTypeMix = stats?.loanTypeMix?.length ? stats.loanTypeMix : [{ name: "No data", value: 100, color: "#94a3b8" }];
+  const employeePerformance = stats?.employeePerformance?.length ? stats.employeePerformance : [{ name: "—", approved: 0, rejected: 0 }];
+  const recentAlerts = (stats?.recentAlerts || []).map((item) => ({
+    ...item,
+    icon: iconMap[item.iconKey] || AlertCircle,
+  }));
+  const growthLabel = stats?.applicationGrowthPercent
+    ? `${stats.applicationGrowthPercent > 0 ? "+" : ""}${stats.applicationGrowthPercent}% vs last month`
+    : "Live application data";
 
   return (
     <>
@@ -173,7 +128,7 @@ const AdminDashboard = () => {
                   <div>
                     <div className="mb-5 flex flex-wrap items-center gap-2">
                       <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-100">
-                        On track — June target
+                        {stats?.targetCompletionPercent >= 80 ? "On track" : "In progress"} — {stats?.currentMonthLabel || "Current month"}
                       </span>
                       <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100">
                         {activeEmployeeCount} active employees
@@ -182,17 +137,19 @@ const AdminDashboard = () => {
 
                     <p className="text-sm text-blue-100">Organisation-wide snapshot</p>
                     <h2 className="mt-2 max-w-xl text-3xl font-bold leading-tight">
-                      Rs. 8.1 Cr disbursed in June 2026
+                      Rs. {stats?.monthlyDisbursedCr ?? 0} Cr disbursed in {stats?.currentMonthLabel || "this month"}
                     </h2>
                     <p className="mt-3 max-w-2xl text-sm leading-relaxed text-blue-100">
-                      Disbursal is 91% of the monthly target. Address the SLA breach in Branch 3 and reject-rate spike before end of week.
+                      {stats?.pendingCount
+                        ? `${stats.pendingCount} application(s) are still under review across the platform.`
+                        : "All current applications have moved past the initial review stage."}
                     </p>
 
                     <div className="mt-6 grid gap-3 sm:grid-cols-3">
                       {[
-                        ["Monthly target", "Rs. 9 Cr"],
-                        ["Avg. risk score", "68"],
-                        ["NPA rate", "2.1%"],
+                        ["Monthly target", `Rs. ${stats?.monthlyTargetCr ?? 9} Cr`],
+                        ["Avg. risk score", String(stats?.avgRiskScore ?? 0)],
+                        ["Decline rate", `${stats?.npaRate ?? 0}%`],
                       ].map(([label, value]) => (
                         <div key={label} className="rounded-lg border border-white/10 bg-white/10 p-3">
                           <p className="text-xs text-blue-100">{label}</p>
@@ -205,16 +162,19 @@ const AdminDashboard = () => {
                   <div className="rounded-lg border border-white/10 bg-white/10 p-4">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold">Target completion</p>
-                      <span className="text-2xl font-bold">91%</span>
+                      <span className="text-2xl font-bold">{stats?.targetCompletionPercent ?? 0}%</span>
                     </div>
                     <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/15">
-                      <div className="h-full w-[91%] rounded-full bg-emerald-400" />
+                      <div
+                        className="h-full rounded-full bg-emerald-400"
+                        style={{ width: `${stats?.targetCompletionPercent ?? 0}%` }}
+                      />
                     </div>
                     <div className="mt-5 space-y-3">
                       {[
-                        ["Total applications", "263"],
-                        ["Approved & disbursed", "195"],
-                        ["Under review", "47"],
+                        ["Total applications", String(stats?.totalApplications ?? 0)],
+                        ["Approved & disbursed", String(stats?.approvedCount ?? 0)],
+                        ["Under review", String(stats?.pendingCount ?? 0)],
                       ].map(([label, value]) => (
                         <div key={label} className="flex items-center justify-between text-sm">
                           <span className="text-blue-100">{label}</span>
@@ -231,29 +191,29 @@ const AdminDashboard = () => {
             <section className="mt-4 grid gap-4 md:grid-cols-4">
               <MetricCard
                 label="Total applications"
-                value="263"
-                detail="June — 18% up vs May"
+                value={statsLoading ? "..." : String(stats?.totalApplications ?? 0)}
+                detail={growthLabel}
                 icon={FileText}
                 tone="bg-blue-50 text-blue-700"
               />
               <MetricCard
                 label="Amount disbursed"
-                value="₹8.1 Cr"
-                detail="91% of June target"
+                value={statsLoading ? "..." : `₹${stats?.monthlyDisbursedCr ?? 0} Cr`}
+                detail={`${stats?.targetCompletionPercent ?? 0}% of monthly target`}
                 icon={DollarSign}
                 tone="bg-emerald-50 text-emerald-700"
               />
               <MetricCard
                 label="Active employees"
                 value={activeEmployeeCount}
-                detail={`${stats.officerCount} officers and ${stats.adminCount} admins in DB`}
+                detail={`${stats?.officerCount ?? 0} officers and ${stats?.adminCount ?? 0} admins in DB`}
                 icon={Users}
                 tone="bg-amber-50 text-amber-700"
               />
               <MetricCard
                 label="Avg. risk score"
-                value="68"
-                detail="2 pts higher than May"
+                value={statsLoading ? "..." : String(stats?.avgRiskScore ?? 0)}
+                detail={`${stats?.customerCount ?? 0} customers on platform`}
                 icon={ShieldCheck}
                 tone="bg-purple-50 text-purple-700"
               />
@@ -336,7 +296,7 @@ const AdminDashboard = () => {
               <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <SectionHeader title="System alerts" subtitle="Issues requiring admin attention" action="View all" />
                 <div className="space-y-3">
-                  {recentAlerts.map(({ title, desc, time, status, icon: Icon }) => (
+                  {recentAlerts.length ? recentAlerts.map(({ title, desc, time, status, icon: Icon }) => (
                     <div key={title} className="flex gap-3 rounded-lg border border-slate-100 p-3">
                       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${statusStyles[status]}`}>
                         <Icon size={16} />
@@ -349,7 +309,9 @@ const AdminDashboard = () => {
                         <p className="mt-1 text-sm text-slate-500">{desc}</p>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-sm text-slate-500">No system alerts right now.</p>
+                  )}
                 </div>
               </div>
             </section>
@@ -359,16 +321,21 @@ const AdminDashboard = () => {
               <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <h2 className="text-base font-bold text-slate-950">End-of-month audit due in 13 days</h2>
+                    <h2 className="text-base font-bold text-slate-950">
+                      {stats?.pendingCount
+                        ? `${stats.pendingCount} application(s) still need review`
+                        : "Application queue is up to date"}
+                    </h2>
                     <p className="mt-1 text-sm text-slate-500">
-                      Review flagged NPA cases and resolve SLA breaches before the June 30 compliance window closes.
+                      {stats?.assignedCustomerCount ?? 0} customers are assigned to officers.
+                      {stats?.declinedCount ? ` ${stats.declinedCount} application(s) were declined.` : ""}
                     </p>
                   </div>
                   <button
-                    onClick={() => navigate("/admin/reports")}
+                    onClick={() => navigate("/admin/applications")}
                     className="flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"
                   >
-                    Start audit <ArrowRight size={15} />
+                    View applications <ArrowRight size={15} />
                   </button>
                 </div>
               </div>

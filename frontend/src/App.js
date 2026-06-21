@@ -15,13 +15,15 @@ import AdminDetails from "./pages/Admin/AdminDetails";
 import AdminEmployees from "./pages/Admin/AdminEmployees";
 import AdminCustomers from "./pages/Admin/AdminCustomers";
 import AdminApplications from "./pages/Admin/AdminApplications";
-import AdminPlaceholder from "./pages/Admin/AdminPlaceholder";
+import AdminReports from "./pages/Admin/AdminReports";
 import AdminRequireDetails from "./pages/Admin/AdminRequireDetails";
 import EmployeeLayout from "./pages/Employee/EmployeeLayout";
 import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
 import EmployeeDetails from "./pages/Employee/EmployeeDetails";
 import EmployeeCustomers from "./pages/Employee/EmployeeCustomers";
 import EmployeeApplications from "./pages/Employee/EmployeeApplications";
+import EmployeeReports from "./pages/Employee/EmployeeReports";
+import AdminPlaceholder from "./pages/Admin/AdminPlaceholder";
 
 function App() {
   return (
@@ -52,7 +54,7 @@ function App() {
             <Route path="applications" element={<AdminRequireDetails><AdminApplications /></AdminRequireDetails>} />
             <Route path="employees" element={<AdminRequireDetails><AdminEmployees /></AdminRequireDetails>} />
             <Route path="customers" element={<AdminRequireDetails><AdminCustomers /></AdminRequireDetails>} />
-            <Route path="reports" element={<AdminRequireDetails><AdminPlaceholder title="Reports" /></AdminRequireDetails>} />
+            <Route path="reports" element={<AdminRequireDetails><AdminReports /></AdminRequireDetails>} />
             <Route path="risk" element={<AdminRequireDetails><AdminPlaceholder title="Risk Engine" /></AdminRequireDetails>} />
             <Route path="*" element={<Navigate to="/admin/dashboard" />} />
           </Route>
@@ -65,7 +67,7 @@ function App() {
             <Route path="customers" element={<EmployeeCustomers />} />
             <Route path="applications" element={<EmployeeApplications />} />
             <Route path="reviews" element={<AdminPlaceholder title="Reviews" />} />
-            <Route path="reports" element={<AdminPlaceholder title="Reports" />} />
+            <Route path="reports" element={<EmployeeReports />} />
             <Route path="*" element={<Navigate to="/employee/dashboard" />} />
           </Route>
         </Routes>

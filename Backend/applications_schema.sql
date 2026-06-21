@@ -28,7 +28,14 @@ create table if not exists loan_applications (
   had_late_payments boolean default false,
   existing_outstanding_debt numeric,
 
-  assigned_employee_id text,
+  risk_score numeric,
+  risk_level text,
+  risk_recommendation text,
+  risk_factors jsonb,
+  review_notes text,
+  reviewed_by text,
+  reviewed_at timestamptz,
+
   created_at timestamptz default now()
 );
 
@@ -38,10 +45,19 @@ on loan_applications (user_id);
 create index if not exists idx_loan_applications_status
 on loan_applications (status);
 
-create index if not exists idx_loan_applications_assigned_employee_id
-on loan_applications (assigned_employee_id);
+-- Officer assignment lives on users.assigned_employee_id, not per application.
+alter table loan_applications
+drop column if exists assigned_employee_id;
+
+drop index if exists idx_loan_applications_assigned_employee_id;
 
 alter table loan_applications
-add column if not exists assigned_employee_id text;
+add column if not exists risk_score numeric,
+add column if not exists risk_level text,
+add column if not exists risk_recommendation text,
+add column if not exists risk_factors jsonb,
+add column if not exists review_notes text,
+add column if not exists reviewed_by text,
+add column if not exists reviewed_at timestamptz;
 
 notify pgrst, 'reload schema';

@@ -27,50 +27,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getStoredUserDetailsComplete } from "../../utils/userDetails";
 
-const riskTrend = [
-  { month: "Jan", score: 58 },
-  { month: "Feb", score: 63 },
-  { month: "Mar", score: 61 },
-  { month: "Apr", score: 67 },
-  { month: "May", score: 72 },
-  { month: "Jun", score: 76 },
-];
-
-const documentMix = [
-  { name: "Done", value: 3, color: "#16a34a" },
-  { name: "Pending", value: 2, color: "#f59e0b" },
-];
-
-const recentActivity = [
-  {
-    title: "Income proof verified",
-    desc: "Salary slips matched bank statement records",
-    time: "Today, 10:45 AM",
-    status: "success",
-    icon: CheckCircle2,
-  },
-  {
-    title: "PAN and Aadhaar uploaded",
-    desc: "Identity documents are ready for officer review",
-    time: "Yesterday",
-    status: "info",
-    icon: Upload,
-  },
-  {
-    title: "Risk score improved",
-    desc: "On-time repayments raised your profile score",
-    time: "2 days ago",
-    status: "success",
-    icon: TrendingUp,
-  },
-  {
-    title: "Address proof required",
-    desc: "Upload a recent utility bill to avoid delay",
-    time: "Pending",
-    status: "warning",
-    icon: AlertCircle,
-  },
-];
+const iconMap = {
+  CheckCircle2,
+  Upload,
+  TrendingUp,
+  AlertCircle,
+  FileText,
+  Clock,
+};
 
 const statusStyles = {
   success: "border-emerald-100 bg-emerald-50 text-emerald-700",
@@ -121,20 +85,51 @@ const CustomTooltip = ({ active, payload, label, prefix = "" }) => {
   );
 };
 
+const formatRs = (value) =>
+  `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
+
+const formatEmi = (value) =>
+  `Rs. ${(Number(value || 0) / 1000).toFixed(1)}K`;
+
 const UserDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [dashData, setDashData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user?.user_id) return;
+    setLoading(true);
     fetch(`http://localhost:8000/applicant/${user.user_id}/dashboard`)
       .then((res) => res.json())
       .then((data) => setDashData(data))
-      .catch(() => {});
+      .catch(() => setDashData(null))
+      .finally(() => setLoading(false));
   }, [user?.user_id]);
 
   const firstName = (dashData?.applicant?.fullName || user?.name || "").split(" ")[0];
+  const hero = dashData?.hero || {};
+  const metrics = dashData?.metrics || {};
+  const riskTrend = dashData?.applicationTrend?.length
+    ? dashData.applicationTrend
+    : [{ month: "—", score: 50 }];
+  const documentMix = dashData?.documentMix?.length
+    ? dashData.documentMix
+    : [
+      { name: "Done", value: 0, color: "#16a34a" },
+      { name: "Pending", value: 5, color: "#f59e0b" },
+    ];
+  const timeline = dashData?.timeline || [];
+  const recentActivity = (dashData?.recentActivity || []).map((item) => ({
+    ...item,
+    icon: iconMap[item.iconKey] || FileText,
+  }));
+  const recommendation = dashData?.recommendation || {
+    title: "Complete your profile",
+    desc: "Add profile details to speed up loan review.",
+  };
+  const readiness = hero.readinessPercent ?? 0;
+  const loanAmount = hero.headlineAmount ?? 0;
 
   const handleApplyLoan = () => {
     if (!getStoredUserDetailsComplete()) {
@@ -184,26 +179,28 @@ const UserDashboard = () => {
               <div>
                 <div className="mb-5 flex flex-wrap items-center gap-2">
                   <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-100">
-                    Verification in progress
+                    {hero.statusLabel || "Verification in progress"}
                   </span>
                   <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100">
-                    Application ID CP-2048
+                    Application ID {hero.applicationId || "—"}
                   </span>
                 </div>
 
-                <p className="text-sm text-blue-100">Home loan application</p>
+                <p className="text-sm text-blue-100">{hero.loanPurpose || "Loan application"}</p>
                 <h2 className="mt-2 max-w-xl text-3xl font-bold leading-tight">
-                  Rs. 20,00,000 request is 64% complete
+                  {loanAmount
+                    ? `${formatRs(loanAmount)} request is ${readiness}% complete`
+                    : "Start your first loan application"}
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-relaxed text-blue-100">
-                  Your profile is strong. Complete the last address proof step to keep approval on track for the next review window.
+                  {recommendation.desc}
                 </p>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
                   {[
-                    ["Expected EMI", "Rs. 18.2K"],
-                    ["Tenure", "12 years"],
-                    ["Review date", "18 Jun"],
+                    ["Expected EMI", loanAmount ? formatEmi(hero.estimatedEmi) : "—"],
+                    ["Tenure", hero.tenureLabel || "—"],
+                    ["Review date", hero.reviewDate || "—"],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-lg border border-white/10 bg-white/10 p-3">
                       <p className="text-xs text-blue-100">{label}</p>
@@ -216,16 +213,16 @@ const UserDashboard = () => {
               <div className="rounded-lg border border-white/10 bg-white/10 p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold">Approval readiness</p>
-                  <span className="text-2xl font-bold">76</span>
+                  <span className="text-2xl font-bold">{readiness}</span>
                 </div>
                 <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/15">
-                  <div className="h-full w-[76%] rounded-full bg-emerald-400" />
+                  <div className="h-full rounded-full bg-emerald-400" style={{ width: `${readiness}%` }} />
                 </div>
                 <div className="mt-5 space-y-3">
                   {[
-                    ["Credit history", "Good"],
-                    ["Income stability", "Strong"],
-                    ["Document health", "Action needed"],
+                    ["Credit history", hero.creditHistory || "—"],
+                    ["Income stability", hero.incomeStability || "—"],
+                    ["Document health", hero.documentHealth || "—"],
                   ].map(([label, value]) => (
                     <div key={label} className="flex items-center justify-between text-sm">
                       <span className="text-blue-100">{label}</span>
@@ -241,22 +238,22 @@ const UserDashboard = () => {
         <section className="mt-4 grid gap-4 md:grid-cols-3">
           <MetricCard
             label="Active loans"
-            value="1"
-            detail="Home loan under verification"
+            value={loading ? "..." : String(metrics.activeLoans ?? 0)}
+            detail={dashData?.latestApplication?.loanPurpose || "No active application"}
             icon={FileText}
             tone="bg-blue-50 text-blue-700"
           />
           <MetricCard
             label="Risk score"
-            value="76"
-            detail="4 points better than last month"
+            value={loading ? "..." : String(metrics.profileScore ?? 0)}
+            detail={metrics.profileScoreDetail || "Profile completion score"}
             icon={ShieldCheck}
             tone="bg-emerald-50 text-emerald-700"
           />
           <MetricCard
             label="Docs uploaded"
-            value="3 / 5"
-            detail="Address proof and bank PDF pending"
+            value={loading ? "..." : metrics.docsUploaded || "0 / 5"}
+            detail={metrics.docsDetail || "Profile fields completed"}
             icon={Upload}
             tone="bg-amber-50 text-amber-700"
           />
@@ -306,11 +303,11 @@ const UserDashboard = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-emerald-50 p-3">
                 <p className="text-xs text-emerald-700">Completed</p>
-                <p className="mt-1 text-xl font-bold text-emerald-800">3</p>
+                <p className="mt-1 text-xl font-bold text-emerald-800">{documentMix[0]?.value ?? 0}</p>
               </div>
               <div className="rounded-lg bg-amber-50 p-3">
                 <p className="text-xs text-amber-700">Pending</p>
-                <p className="mt-1 text-xl font-bold text-amber-800">2</p>
+                <p className="mt-1 text-xl font-bold text-amber-800">{documentMix[1]?.value ?? 0}</p>
               </div>
             </div>
           </div>
@@ -320,13 +317,7 @@ const UserDashboard = () => {
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <SectionHeader title="Application timeline" subtitle="Where your loan stands right now" action="View all" />
             <div className="space-y-4">
-              {[
-                { label: "Application submitted", done: true },
-                { label: "Documents collected", done: true },
-                { label: "Income verification", done: true },
-                { label: "Address proof check", done: false },
-                { label: "Final approval", done: false },
-              ].map(({ label, done }, index, arr) => (
+              {(timeline.length ? timeline : [{ label: "Application submitted", done: false }]).map(({ label, done }, index, arr) => (
                 <div key={label} className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div className={`flex h-7 w-7 items-center justify-center rounded-full border-2 ${
@@ -354,7 +345,7 @@ const UserDashboard = () => {
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <SectionHeader title="Recent activity" subtitle="Latest movement on your profile" />
             <div className="space-y-3">
-              {recentActivity.map(({ title, desc, time, status, icon: Icon }) => (
+              {recentActivity.length ? recentActivity.map(({ title, desc, time, status, icon: Icon }) => (
                 <div key={title} className="flex gap-3 rounded-lg border border-slate-100 p-3">
                   <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${statusStyles[status]}`}>
                     <Icon size={16} />
@@ -367,7 +358,9 @@ const UserDashboard = () => {
                     <p className="mt-1 text-sm text-slate-500">{desc}</p>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-sm text-slate-500">No recent activity yet.</p>
+              )}
             </div>
           </div>
         </section>
@@ -376,9 +369,9 @@ const UserDashboard = () => {
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 className="text-base font-bold text-slate-950">Personalized recommendation</h2>
+                <h2 className="text-base font-bold text-slate-950">{recommendation.title}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Lower the processing risk by submitting one more stable address proof.
+                  {recommendation.desc}
                 </p>
               </div>
               <button

@@ -70,3 +70,8 @@ class ApplicationCreateRequest(BaseModel):
     numPastLoans: int = 0
     hadLatePayments: bool = False
     existingOutstandingDebt: Optional[float] = 0
+
+
+class ApplicationReviewRequest(BaseModel):
+    action: str
+    notes: Optional[str] = ""

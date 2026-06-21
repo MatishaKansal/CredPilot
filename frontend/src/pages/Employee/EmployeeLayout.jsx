@@ -2,7 +2,6 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Bell,
-  ClipboardList,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -19,7 +18,6 @@ const navItems = [
   { label: "Details", icon: UserCog, path: "/employee/details", open: true },
   { label: "Customers", icon: Users, path: "/employee/customers" },
   { label: "Applications", icon: FileText, path: "/employee/applications" },
-  { label: "Reviews", icon: ClipboardList, path: "/employee/reviews" },
   { label: "Reports", icon: TrendingUp, path: "/employee/reports" },
 ];
 

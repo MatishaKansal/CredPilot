@@ -86,7 +86,7 @@ const AdminCustomers = () => {
           <p className="text-sm font-semibold text-[#43567C]">Customers</p>
           <h1 className="mt-1 text-2xl font-bold text-slate-950">Customer assignments</h1>
           <p className="mt-1 text-sm text-slate-500">
-            View customer details and assign applicants to employees.
+            Assign a customer once. All of their loan applications go to that officer.
           </p>
         </div>
         <button

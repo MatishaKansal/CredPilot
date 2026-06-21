@@ -5,9 +5,16 @@ import { useAuth } from "../../context/AuthContext";
 
 const statusStyles = {
   pending: "bg-amber-50 text-amber-700 border-amber-200",
+  pending_admin: "bg-violet-50 text-violet-700 border-violet-200",
   under_review: "bg-blue-50 text-blue-700 border-blue-200",
   approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  declined: "bg-red-50 text-red-700 border-red-200",
   rejected: "bg-red-50 text-red-700 border-red-200",
+};
+
+const applicantStatusLabel = (status) => {
+  if (status === "pending_admin") return "With admin";
+  return (status || "pending").replaceAll("_", " ");
 };
 
 const formatCurrency = (value) =>
@@ -103,7 +110,7 @@ const UserApplications = () => {
                     <td className="px-5 py-4 text-slate-600">{app.tenureMonths} mo</td>
                     <td className="px-5 py-4">
                       <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${statusStyles[app.status] || statusStyles.pending}`}>
-                        {(app.status || "pending").replace("_", " ")}
+                        {applicantStatusLabel(app.status)}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-slate-500">

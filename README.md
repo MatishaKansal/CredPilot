@@ -233,16 +233,6 @@ Backend runs at:
 http://127.0.0.1:8000
 ```
 
-### Environment Variables
-
-| Variable | Description |
-|-----------|-------------|
-| SUPABASE_URL | Supabase Project URL |
-| SUPABASE_KEY | Supabase Project Key |
-| GEMINI_API_KEY | Applicant Assistant |
-| GEMINI_EMPLOYEE_API_KEY | Employee Assistant |
-| GEMINI_ADMIN_API_KEY | Admin Assistant |
-
 ### Frontend
 
 ```bash

@@ -3,9 +3,6 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -21,7 +18,7 @@ import {
   Search,
   ShieldCheck,
   TrendingUp,
-  Upload,
+  User,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -29,12 +26,21 @@ import { getStoredUserDetailsComplete } from "../../utils/userDetails";
 
 const iconMap = {
   CheckCircle2,
-  Upload,
+  User,
   TrendingUp,
   AlertCircle,
   FileText,
   Clock,
 };
+
+const defaultRequiredDocuments = [
+  "Government ID proof",
+  "Income proof",
+  "Address proof",
+  "Loan purpose proof (if applicable)",
+];
+
+const documentLabel = (item) => (typeof item === "string" ? item : item.title);
 
 const statusStyles = {
   success: "border-emerald-100 bg-emerald-50 text-emerald-700",
@@ -113,12 +119,9 @@ const UserDashboard = () => {
   const riskTrend = dashData?.applicationTrend?.length
     ? dashData.applicationTrend
     : [{ month: "—", score: 50 }];
-  const documentMix = dashData?.documentMix?.length
-    ? dashData.documentMix
-    : [
-      { name: "Done", value: 0, color: "#16a34a" },
-      { name: "Pending", value: 5, color: "#f59e0b" },
-    ];
+  const requiredDocuments = dashData?.requiredDocuments?.length
+    ? dashData.requiredDocuments
+    : defaultRequiredDocuments;
   const timeline = dashData?.timeline || [];
   const recentActivity = (dashData?.recentActivity || []).map((item) => ({
     ...item,
@@ -222,7 +225,7 @@ const UserDashboard = () => {
                   {[
                     ["Credit history", hero.creditHistory || "—"],
                     ["Income stability", hero.incomeStability || "—"],
-                    ["Document health", hero.documentHealth || "—"],
+                    ["Profile completeness", hero.profileCompleteness || hero.documentHealth || "—"],
                   ].map(([label, value]) => (
                     <div key={label} className="flex items-center justify-between text-sm">
                       <span className="text-blue-100">{label}</span>
@@ -251,10 +254,10 @@ const UserDashboard = () => {
             tone="bg-emerald-50 text-emerald-700"
           />
           <MetricCard
-            label="Docs uploaded"
-            value={loading ? "..." : metrics.docsUploaded || "0 / 5"}
-            detail={metrics.docsDetail || "Profile fields completed"}
-            icon={Upload}
+            label="Profile fields"
+            value={loading ? "..." : metrics.profileFieldsComplete || metrics.docsUploaded || "0 / 5"}
+            detail={metrics.profileFieldsDetail || metrics.docsDetail || "Profile fields completed"}
+            icon={User}
             tone="bg-amber-50 text-amber-700"
           />
         </section>
@@ -288,28 +291,14 @@ const UserDashboard = () => {
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <SectionHeader title="Document health" subtitle="Current upload completion" />
-            <div className="flex items-center justify-center">
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie data={documentMix} dataKey="value" innerRadius={58} outerRadius={78} paddingAngle={4}>
-                    {documentMix.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-emerald-50 p-3">
-                <p className="text-xs text-emerald-700">Completed</p>
-                <p className="mt-1 text-xl font-bold text-emerald-800">{documentMix[0]?.value ?? 0}</p>
-              </div>
-              <div className="rounded-lg bg-amber-50 p-3">
-                <p className="text-xs text-amber-700">Pending</p>
-                <p className="mt-1 text-xl font-bold text-amber-800">{documentMix[1]?.value ?? 0}</p>
-              </div>
-            </div>
+            <SectionHeader title="Required documents" />
+            <ul className="space-y-2">
+              {requiredDocuments.map((item) => (
+                <li key={documentLabel(item)} className="text-sm font-medium text-slate-800">
+                  • {documentLabel(item)}
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
@@ -375,13 +364,7 @@ const UserDashboard = () => {
                 </p>
               </div>
               <button
-                onClick={() => {
-                  if (!getStoredUserDetailsComplete()) {
-                    navigate("/user/profile");
-                    return;
-                  }
-                  navigate("/user/documents");
-                }}
+                onClick={() => navigate("/user/profile")}
                 className="flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"
               >
                 Fix now <ArrowRight size={15} />

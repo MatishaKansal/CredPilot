@@ -113,6 +113,10 @@ const UserProfile = () => {
         <p className="mt-3 text-sm text-slate-500">
         Fill in your details once to unlock the rest of your application journey.
         </p>
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="font-semibold">Required at review</p>
+          <p className="mt-1 text-amber-800">ID proof, income proof, address proof.</p>
+        </div>
       </section>
 
       {(message || error) && (

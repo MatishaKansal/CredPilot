@@ -5,8 +5,8 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   Search,
-  ShieldCheck,
   TrendingUp,
   User,
   UserCog,
@@ -22,7 +22,7 @@ const navItems = [
   { label: "Employees", icon: Users, path: "/admin/employees" },
   { label: "Customers", icon: User, path: "/admin/customers" },
   { label: "Reports", icon: TrendingUp, path: "/admin/reports" },
-  { label: "Risk Engine", icon: ShieldCheck, path: "/admin/risk" },
+  { label: "Support", icon: MessageCircle, path: "/admin/support" },
 ];
 
 const AdminLayout = () => {
@@ -74,8 +74,11 @@ const AdminLayout = () => {
             <p className="mt-2 text-xs leading-relaxed text-blue-100">
               All systems operational. Last sync: 2 min ago.
             </p>
-            <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#071a3f]">
-              View logs <ArrowRight size={14} />
+            <button
+              onClick={() => navigate("/admin/support")}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#071a3f]"
+            >
+              Start chat <ArrowRight size={14} />
             </button>
           </div>
 

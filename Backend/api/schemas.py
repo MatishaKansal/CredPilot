@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -75,3 +75,33 @@ class ApplicationCreateRequest(BaseModel):
 class ApplicationReviewRequest(BaseModel):
     action: str
     notes: Optional[str] = ""
+
+
+class EligibilityCheckRequest(BaseModel):
+    loanAmount: float
+    tenureMonths: int
+    monthlyIncome: float
+    dateOfBirth: str
+    gender: str
+    maritalStatus: str = "Single"
+    numChildren: int = 0
+    educationLevel: str = "Graduate"
+    employmentType: str = "Salaried"
+    yearsEmployed: float = 0
+    ownsCar: bool = False
+    ownsHouse: bool = False
+    regionType: str = "Urban"
+    hasPastLoans: bool = False
+    numPastLoans: int = 0
+    hadLatePayments: bool = False
+    existingOutstandingDebt: Optional[float] = 0
+
+
+class SupportChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class SupportChatRequest(BaseModel):
+    message: str
+    history: Optional[List[SupportChatMessage]] = []

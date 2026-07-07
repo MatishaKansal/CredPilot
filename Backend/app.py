@@ -2,7 +2,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 import json
+import os
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 from datetime import datetime, timezone
+from dotenv import load_dotenv
 
 from passlib.hash import pbkdf2_sha256
 
@@ -17,6 +21,8 @@ from api.schemas import (
     ApplicantUpdateRequest,
     ApplicationCreateRequest,
     ApplicationReviewRequest,
+    EligibilityCheckRequest,
+    SupportChatRequest,
 )
 
 from api.utils import (
@@ -33,6 +39,9 @@ from dashboard_analytics import (
     build_employee_dashboard,
     build_employee_reports,
 )
+
+# Ensure env vars are loaded even if uvicorn starts outside Backend/.
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 app = FastAPI()
 
@@ -236,6 +245,235 @@ def application_insert_payload(user_id: str, application_id: str, body: Applicat
         "had_late_payments": body.hadLatePayments if body.hasPastLoans else False,
         "existing_outstanding_debt": body.existingOutstandingDebt or 0,
     }
+
+
+def eligibility_application_payload(body: EligibilityCheckRequest):
+    return {
+        "monthly_income": body.monthlyIncome,
+        "loan_amount": body.loanAmount,
+        "tenure_months": body.tenureMonths,
+        "years_employed": body.yearsEmployed,
+        "employment_type": body.employmentType,
+        "date_of_birth": body.dateOfBirth,
+        "gender": body.gender,
+        "marital_status": body.maritalStatus,
+        "num_children": body.numChildren,
+        "education_level": body.educationLevel,
+        "owns_car": body.ownsCar,
+        "owns_house": body.ownsHouse,
+        "region_type": body.regionType,
+        "has_past_loans": body.hasPastLoans,
+        "num_past_loans": body.numPastLoans if body.hasPastLoans else 0,
+        "had_late_payments": body.hadLatePayments if body.hasPastLoans else False,
+        "existing_outstanding_debt": body.existingOutstandingDebt or 0,
+    }
+
+
+def _is_support_model(name: str) -> bool:
+    lowered = name.lower()
+    blocked = ("thinking", "preview", "experimental", "image", "tts", "audio", "embedding")
+    return not any(token in lowered for token in blocked)
+
+
+def _support_model_priority(name: str) -> tuple:
+    lowered = name.lower()
+    if "flash" in lowered and "lite" not in lowered:
+        return (0, lowered)
+    if "flash" in lowered:
+        return (1, lowered)
+    if "pro" in lowered:
+        return (2, lowered)
+    return (3, lowered)
+
+
+def _extract_gemini_text(candidate: dict) -> str:
+    parts = candidate.get("content", {}).get("parts", [])
+    visible = [
+        part.get("text", "")
+        for part in parts
+        if part.get("text") and not part.get("thought")
+    ]
+    return "".join(visible).strip()
+
+
+APPLICANT_SUPPORT_INSTRUCTION = (
+    "You are CredPilot's customer support assistant for loan applicants. "
+    "Answer in plain, friendly English with complete sentences and actionable steps. "
+    "Always finish your answer — never stop mid-sentence. "
+    "Cover loan application status, eligibility, required documents, KYC, repayment basics, "
+    "and product guidance. If asked unrelated topics, politely refuse and redirect to loan support. "
+    "Use short paragraphs or bullet points when listing documents or steps."
+)
+
+EMPLOYEE_SUPPORT_INSTRUCTION = (
+    "You are CredPilot's assistant for loan officers and bank employees. "
+    "Answer in plain, professional English with complete sentences and actionable steps. "
+    "Always finish your answer — never stop mid-sentence. "
+    "Help with application review queues, risk scores, approval/decline/escalation workflows, "
+    "required documents, customer follow-ups, and interpreting risk factors. "
+    "Use short paragraphs or bullet points when listing steps. "
+    "Do not invent customer data — only reference what appears in the employee context."
+)
+
+ADMIN_SUPPORT_INSTRUCTION = (
+    "You are CredPilot's assistant for bank administrators. "
+    "Answer in plain, professional English with complete sentences and actionable steps. "
+    "Always finish your answer — never stop mid-sentence. "
+    "Help with platform oversight, escalated application reviews, employee and customer management, "
+    "approval trends, risk monitoring, fairness checks, and operational reporting. "
+    "When asked for counts, totals, status breakdowns, or platform metrics, answer directly using "
+    "dashboardMetrics and applicationStatusBreakdown from the context. "
+    "Never say data is unavailable or tell the user to open another page when those numbers are present. "
+    "Use short paragraphs or bullet points when listing steps. "
+    "Do not invent data — only reference what appears in the admin context."
+)
+
+
+def _build_support_contents(
+    history: list,
+    user_message: str,
+    context: dict,
+    system_instruction: str,
+    context_label: str = "Context",
+):
+    contents = [
+        {
+            "role": "user",
+            "parts": [
+                {
+                    "text": (
+                        f"{system_instruction}\n\n"
+                        f"{context_label}:\n{json.dumps(context, ensure_ascii=True)}"
+                    )
+                }
+            ],
+        },
+        {
+            "role": "model",
+            "parts": [{"text": "Understood. I will give complete, helpful support answers."}],
+        },
+    ]
+
+    for item in history[-8:]:
+        role = (item.get("role") or "").strip().lower()
+        content = (item.get("content") or "").strip()
+        if not content:
+            continue
+        gemini_role = "model" if role == "assistant" else "user"
+        contents.append({"role": gemini_role, "parts": [{"text": content}]})
+
+    contents.append({"role": "user", "parts": [{"text": user_message}]})
+    return contents
+
+
+def generate_support_reply(
+    user_message: str,
+    context: dict,
+    history: list | None = None,
+    *,
+    api_key_env: str = "GEMINI_API_KEY",
+    model_env: str = "GEMINI_MODEL",
+    system_instruction: str = APPLICANT_SUPPORT_INSTRUCTION,
+    context_label: str = "Applicant context",
+    missing_key_detail: str = "Support assistant is not configured. Set GEMINI_API_KEY in Backend/.env.",
+):
+    api_key = os.getenv(api_key_env, "").strip()
+    if not api_key:
+        raise HTTPException(status_code=500, detail=missing_key_detail)
+
+    configured_model = os.getenv(model_env, "").strip() or os.getenv("GEMINI_MODEL", "").strip()
+    discovered_models = []
+
+    try:
+        list_models_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+        with urllib_request.urlopen(list_models_url, timeout=20) as response:
+            models_payload = json.loads(response.read().decode("utf-8"))
+        for model in models_payload.get("models", []):
+            methods = model.get("supportedGenerationMethods", [])
+            if "generateContent" not in methods:
+                continue
+            name = model.get("name", "")
+            if name.startswith("models/"):
+                name = name.split("/", 1)[1]
+            if name and _is_support_model(name):
+                discovered_models.append(name)
+    except Exception:
+        pass
+
+    model_candidates = []
+    if configured_model:
+        model_candidates.append(configured_model)
+
+    for name in sorted(discovered_models, key=_support_model_priority):
+        if name not in model_candidates:
+            model_candidates.append(name)
+
+    if not model_candidates:
+        model_candidates = [
+            "gemini-2.0-flash",
+            "gemini-1.5-flash-latest",
+        ]
+
+    contents = _build_support_contents(
+        history or [],
+        user_message,
+        context,
+        system_instruction,
+        context_label,
+    )
+    payload = {
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.5,
+            "maxOutputTokens": 1024,
+        },
+    }
+
+    body = json.dumps(payload).encode("utf-8")
+    last_error = "Unknown provider error"
+    for model_name in model_candidates:
+        endpoint = (
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{model_name}:generateContent?key={api_key}"
+        )
+        req = urllib_request.Request(
+            endpoint,
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib_request.urlopen(req, timeout=45) as response:
+                raw = response.read().decode("utf-8")
+            parsed = json.loads(raw)
+            candidates = parsed.get("candidates", [])
+            if not candidates:
+                last_error = f"No candidates returned for model {model_name}"
+                continue
+
+            candidate = candidates[0]
+            finish_reason = candidate.get("finishReason", "")
+            text = _extract_gemini_text(candidate)
+            if text and finish_reason != "MAX_TOKENS":
+                return text
+            if text and len(text.split()) >= 12:
+                return text
+            last_error = f"Incomplete reply for model {model_name} ({finish_reason or 'empty'})"
+        except urllib_error.HTTPError as exc:
+            try:
+                error_payload = exc.read().decode("utf-8")
+            except Exception:
+                error_payload = str(exc)
+            last_error = f"{model_name}: {error_payload}"
+            continue
+        except Exception as exc:
+            last_error = f"{model_name}: {str(exc)}"
+            continue
+
+    raise HTTPException(
+        status_code=502,
+        detail=f"LLM provider error: {last_error}",
+    )
 
 
 EMPLOYEE_REVIEW_ACTIONS = {
@@ -458,6 +696,15 @@ def login(user: LoginRequest):
 
 @app.get("/admin/dashboard")
 def admin_dashboard():
+    snapshot = _load_admin_platform_snapshot()
+    return build_admin_dashboard(
+        snapshot["employees"],
+        snapshot["customers"],
+        snapshot["applications"],
+    )
+
+
+def _load_admin_platform_snapshot():
     employees = (
         supabase
         .table("employees")
@@ -492,11 +739,13 @@ def admin_dashboard():
     except Exception:
         applications = type("obj", (), {"data": []})()
 
-    return build_admin_dashboard(
-        employees.data or [],
-        customers.data or [],
-        applications.data or [],
-    )
+    return {
+        "employees": employees.data or [],
+        "customers": customers.data or [],
+        "applications": [
+            application_row_with_risk(row) for row in (applications.data or [])
+        ],
+    }
 
 
 @app.get("/admin/reports")
@@ -773,7 +1022,7 @@ def employee_dashboard(employee_id: str):
 
     return build_employee_dashboard(
         employee.data[0],
-        applications.data or [],
+        [application_row_with_risk(row) for row in (applications.data or [])],
         len(customers.data or []),
     )
 
@@ -948,8 +1197,33 @@ def applicant_dashboard(user_id: str):
 
     return build_applicant_dashboard(
         result.data[0],
-        applications.data or [],
+        [application_row_with_risk(row) for row in (applications.data or [])],
     )
+
+
+@app.post("/applicant/{user_id}/eligibility-check")
+def check_eligibility(user_id: str, body: EligibilityCheckRequest):
+    applicant = (
+        supabase
+        .table("users")
+        .select("user_id")
+        .eq("user_id", user_id)
+        .eq("role", "applicant")
+        .execute()
+    )
+    if not applicant.data:
+        raise HTTPException(status_code=404, detail="Applicant not found")
+
+    prediction = predict_application_risk(eligibility_application_payload(body))
+    return {
+        "riskScore": prediction["riskScore"],
+        "riskLevel": prediction["riskLevel"],
+        "riskRecommendation": prediction["riskRecommendation"],
+        "riskSource": prediction["riskSource"],
+        "defaultProbability": prediction.get("defaultProbability"),
+        "riskFactors": prediction["riskFactors"],
+        "shapExplanation": prediction.get("shapExplanation", {"available": False, "features": []}),
+    }
 
 
 @app.post("/applicant/{user_id}/applications")
@@ -1000,6 +1274,263 @@ def create_application(user_id: str, body: ApplicationCreateRequest):
         "message": "Application submitted successfully",
         "application": normalize_application(row),
     }
+
+
+@app.post("/applicant/{user_id}/support-chat")
+def applicant_support_chat(user_id: str, body: SupportChatRequest):
+    message = (body.message or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    applicant = (
+        supabase
+        .table("users")
+        .select("user_id,full_name,email,assigned_employee_id")
+        .eq("user_id", user_id)
+        .eq("role", "applicant")
+        .execute()
+    )
+    if not applicant.data:
+        raise HTTPException(status_code=404, detail="Applicant not found")
+
+    applications = (
+        supabase
+        .table("loan_applications")
+        .select(
+            "application_id,status,loan_amount,loan_purpose,tenure_months,created_at,"
+            "risk_score,risk_level,risk_recommendation"
+        )
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(3)
+        .execute()
+    )
+
+    context = {
+        "applicant": applicant.data[0],
+        "recentApplications": [
+            application_row_with_risk(row) for row in (applications.data or [])
+        ],
+    }
+    history = [
+        {"role": item.role, "content": item.content}
+        for item in (body.history or [])
+        if (item.content or "").strip()
+    ]
+    reply = generate_support_reply(
+        message,
+        context,
+        history,
+        system_instruction=APPLICANT_SUPPORT_INSTRUCTION,
+        context_label="Applicant context",
+    )
+    return {"reply": reply}
+
+
+@app.post("/employee/{employee_id}/support-chat")
+def employee_support_chat(employee_id: str, body: SupportChatRequest):
+    message = (body.message or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    employee = (
+        supabase
+        .table("employees")
+        .select("id,full_name,email,role")
+        .eq("id", employee_id)
+        .execute()
+    )
+    if not employee.data:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    try:
+        customers = (
+            supabase
+            .table("users")
+            .select("user_id,full_name")
+            .eq("role", "applicant")
+            .eq("assigned_employee_id", employee_id)
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Unable to load assigned customers for support context.",
+        ) from exc
+
+    customer_rows = customers.data or []
+    customer_ids = [row.get("user_id") for row in customer_rows]
+    applications_data = []
+    if customer_ids:
+        try:
+            applications = (
+                supabase
+                .table("loan_applications")
+                .select(
+                    "application_id,user_id,status,loan_amount,loan_purpose,"
+                    "risk_level,risk_score,created_at,full_name"
+                )
+                .in_("user_id", customer_ids)
+                .order("created_at", desc=True)
+                .limit(8)
+                .execute()
+            )
+            applications_data = applications.data or []
+        except Exception:
+            applications_data = []
+
+    pending_count = sum(
+        1 for row in applications_data
+        if (row.get("status") or "").lower() in ("pending", "pending_admin")
+    )
+
+    context = {
+        "employee": employee.data[0],
+        "assignedCustomerCount": len(customer_rows),
+        "pendingApplicationCount": pending_count,
+        "assignedCustomers": customer_rows[:5],
+        "recentApplications": applications_data,
+    }
+    history = [
+        {"role": item.role, "content": item.content}
+        for item in (body.history or [])
+        if (item.content or "").strip()
+    ]
+    reply = generate_support_reply(
+        message,
+        context,
+        history,
+        api_key_env="GEMINI_EMPLOYEE_API_KEY",
+        model_env="GEMINI_EMPLOYEE_MODEL",
+        system_instruction=EMPLOYEE_SUPPORT_INSTRUCTION,
+        context_label="Employee context",
+        missing_key_detail=(
+            "Employee support assistant is not configured. "
+            "Set GEMINI_EMPLOYEE_API_KEY in Backend/.env."
+        ),
+    )
+    return {"reply": reply}
+
+
+@app.post("/admin/{admin_id}/support-chat")
+def admin_support_chat(admin_id: str, body: SupportChatRequest):
+    message = (body.message or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    admin = (
+        supabase
+        .table("employees")
+        .select("id,full_name,email,role")
+        .eq("id", admin_id)
+        .execute()
+    )
+    if not admin.data:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    if admin.data[0].get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Only admin accounts can use this assistant")
+
+    snapshot = _load_admin_platform_snapshot()
+    employee_rows = snapshot["employees"]
+    customer_rows = snapshot["customers"]
+    applications_data = snapshot["applications"]
+    dashboard_metrics = build_admin_dashboard(
+        employee_rows,
+        customer_rows,
+        applications_data,
+    )
+
+    status_breakdown = {
+        "pending": sum(
+            1 for row in applications_data
+            if (row.get("status") or "pending").lower() == "pending"
+        ),
+        "pendingAdmin": sum(
+            1 for row in applications_data
+            if (row.get("status") or "").lower() == "pending_admin"
+        ),
+        "approved": sum(
+            1 for row in applications_data
+            if (row.get("status") or "").lower() == "approved"
+        ),
+        "declined": sum(
+            1 for row in applications_data
+            if (row.get("status") or "").lower() in ("declined", "rejected")
+        ),
+        "total": len(applications_data),
+    }
+
+    escalated = [
+        {
+            "applicationId": row.get("application_id"),
+            "applicantName": row.get("full_name", ""),
+            "loanAmount": row.get("loan_amount"),
+            "loanPurpose": row.get("loan_purpose"),
+            "riskLevel": row.get("risk_level"),
+            "riskScore": row.get("risk_score"),
+        }
+        for row in applications_data
+        if (row.get("status") or "").lower() == "pending_admin"
+    ][:5]
+
+    recent_applications = sorted(
+        applications_data,
+        key=lambda row: row.get("created_at") or "",
+        reverse=True,
+    )[:5]
+    recent_summary = [
+        {
+            "applicationId": row.get("application_id"),
+            "applicantName": row.get("full_name", ""),
+            "status": row.get("status"),
+            "loanAmount": row.get("loan_amount"),
+            "loanPurpose": row.get("loan_purpose"),
+            "riskLevel": row.get("risk_level"),
+        }
+        for row in recent_applications
+    ]
+
+    context = {
+        "admin": admin.data[0],
+        "dashboardMetrics": {
+            "totalApplications": dashboard_metrics.get("totalApplications", 0),
+            "approvedCount": dashboard_metrics.get("approvedCount", 0),
+            "pendingCount": dashboard_metrics.get("pendingCount", 0),
+            "declinedCount": dashboard_metrics.get("declinedCount", 0),
+            "customerCount": dashboard_metrics.get("customerCount", 0),
+            "assignedCustomerCount": dashboard_metrics.get("assignedCustomerCount", 0),
+            "employeeCount": dashboard_metrics.get("employeeCount", 0),
+            "officerCount": dashboard_metrics.get("officerCount", 0),
+            "adminCount": dashboard_metrics.get("adminCount", 0),
+            "avgRiskScore": dashboard_metrics.get("avgRiskScore", 0),
+            "monthlyDisbursedCr": dashboard_metrics.get("monthlyDisbursedCr", 0),
+            "applicationGrowthPercent": dashboard_metrics.get("applicationGrowthPercent", 0),
+            "npaRate": dashboard_metrics.get("npaRate", 0),
+            "currentMonthLabel": dashboard_metrics.get("currentMonthLabel", ""),
+        },
+        "applicationStatusBreakdown": status_breakdown,
+        "escalatedApplications": escalated,
+        "recentApplications": recent_summary,
+    }
+    history = [
+        {"role": item.role, "content": item.content}
+        for item in (body.history or [])
+        if (item.content or "").strip()
+    ]
+    reply = generate_support_reply(
+        message,
+        context,
+        history,
+        api_key_env="GEMINI_ADMIN_API_KEY",
+        model_env="GEMINI_ADMIN_MODEL",
+        system_instruction=ADMIN_SUPPORT_INSTRUCTION,
+        context_label="Admin context",
+        missing_key_detail=(
+            "Admin support assistant is not configured. "
+            "Set GEMINI_ADMIN_API_KEY in Backend/.env."
+        ),
+    )
+    return {"reply": reply}
 
 
 @app.get("/applicant/{user_id}/applications")

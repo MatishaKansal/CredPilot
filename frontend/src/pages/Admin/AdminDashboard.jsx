@@ -128,7 +128,7 @@ const AdminDashboard = () => {
                   <div>
                     <div className="mb-5 flex flex-wrap items-center gap-2">
                       <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-100">
-                        {stats?.targetCompletionPercent >= 80 ? "On track" : "In progress"} — {stats?.currentMonthLabel || "Current month"}
+                        {stats?.currentMonthLabel || "Current month"} overview
                       </span>
                       <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100">
                         {activeEmployeeCount} active employees
@@ -147,7 +147,7 @@ const AdminDashboard = () => {
 
                     <div className="mt-6 grid gap-3 sm:grid-cols-3">
                       {[
-                        ["Monthly target", `Rs. ${stats?.monthlyTargetCr ?? 9} Cr`],
+                        ["Approved loans", String(stats?.approvedCount ?? 0)],
                         ["Avg. risk score", String(stats?.avgRiskScore ?? 0)],
                         ["Decline rate", `${stats?.npaRate ?? 0}%`],
                       ].map(([label, value]) => (
@@ -161,15 +161,10 @@ const AdminDashboard = () => {
 
                   <div className="rounded-lg border border-white/10 bg-white/10 p-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold">Target completion</p>
-                      <span className="text-2xl font-bold">{stats?.targetCompletionPercent ?? 0}%</span>
+                      <p className="text-sm font-semibold">Application overview</p>
+                      <span className="text-2xl font-bold">{stats?.totalApplications ?? 0}</span>
                     </div>
-                    <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/15">
-                      <div
-                        className="h-full rounded-full bg-emerald-400"
-                        style={{ width: `${stats?.targetCompletionPercent ?? 0}%` }}
-                      />
-                    </div>
+                    <p className="mt-1 text-xs text-blue-100">Total applications on platform</p>
                     <div className="mt-5 space-y-3">
                       {[
                         ["Total applications", String(stats?.totalApplications ?? 0)],
@@ -199,7 +194,7 @@ const AdminDashboard = () => {
               <MetricCard
                 label="Amount disbursed"
                 value={statsLoading ? "..." : `₹${stats?.monthlyDisbursedCr ?? 0} Cr`}
-                detail={`${stats?.targetCompletionPercent ?? 0}% of monthly target`}
+                detail={`${stats?.approvedCount ?? 0} approved loan(s) disbursed`}
                 icon={DollarSign}
                 tone="bg-emerald-50 text-emerald-700"
               />

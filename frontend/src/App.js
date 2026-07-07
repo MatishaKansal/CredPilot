@@ -8,7 +8,9 @@ import UserDashboard from "./pages/User/UserDashboard";
 import UserProfile from "./pages/User/UserProfile";
 import UserApplicationForm from "./pages/User/UserApplicationForm";
 import UserApplications from "./pages/User/UserApplications";
+import UserEligibility from "./pages/User/UserEligibility";
 import UserPlaceholder from "./pages/User/UserPlaceholder";
+import UserSupport from "./pages/User/UserSupport";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminDetails from "./pages/Admin/AdminDetails";
@@ -16,6 +18,7 @@ import AdminEmployees from "./pages/Admin/AdminEmployees";
 import AdminCustomers from "./pages/Admin/AdminCustomers";
 import AdminApplications from "./pages/Admin/AdminApplications";
 import AdminReports from "./pages/Admin/AdminReports";
+import AdminSupport from "./pages/Admin/AdminSupport";
 import AdminRequireDetails from "./pages/Admin/AdminRequireDetails";
 import EmployeeLayout from "./pages/Employee/EmployeeLayout";
 import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
@@ -23,6 +26,7 @@ import EmployeeDetails from "./pages/Employee/EmployeeDetails";
 import EmployeeCustomers from "./pages/Employee/EmployeeCustomers";
 import EmployeeApplications from "./pages/Employee/EmployeeApplications";
 import EmployeeReports from "./pages/Employee/EmployeeReports";
+import EmployeeSupport from "./pages/Employee/EmployeeSupport";
 import AdminPlaceholder from "./pages/Admin/AdminPlaceholder";
 
 function App() {
@@ -39,9 +43,8 @@ function App() {
             <Route path="dashboard" element={<UserDashboard />} />
             <Route path="profile" element={<UserProfile />} />
             <Route path="applications" element={<UserApplications />} />
-            <Route path="documents" element={<UserPlaceholder title="Documents" />} />
-            <Route path="eligibility" element={<UserPlaceholder title="Eligibility" />} />
-            <Route path="support" element={<UserPlaceholder title="Support" />} />
+            <Route path="eligibility" element={<UserEligibility />} />
+            <Route path="support" element={<UserSupport />} />
             <Route path="apply-loan" element={<UserApplicationForm />} />
             <Route path="*" element={<Navigate to="/user/dashboard" />} />
           </Route>
@@ -55,7 +58,7 @@ function App() {
             <Route path="employees" element={<AdminRequireDetails><AdminEmployees /></AdminRequireDetails>} />
             <Route path="customers" element={<AdminRequireDetails><AdminCustomers /></AdminRequireDetails>} />
             <Route path="reports" element={<AdminRequireDetails><AdminReports /></AdminRequireDetails>} />
-            <Route path="risk" element={<AdminRequireDetails><AdminPlaceholder title="Risk Engine" /></AdminRequireDetails>} />
+            <Route path="support" element={<AdminSupport />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" />} />
           </Route>
 
@@ -66,8 +69,9 @@ function App() {
             <Route path="details" element={<EmployeeDetails />} />
             <Route path="customers" element={<EmployeeCustomers />} />
             <Route path="applications" element={<EmployeeApplications />} />
-            <Route path="reviews" element={<AdminPlaceholder title="Reviews" />} />
+            <Route path="reviews" element={<EmployeeApplications />} />
             <Route path="reports" element={<EmployeeReports />} />
+            <Route path="support" element={<EmployeeSupport />} />
             <Route path="*" element={<Navigate to="/employee/dashboard" />} />
           </Route>
         </Routes>

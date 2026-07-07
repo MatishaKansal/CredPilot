@@ -20,6 +20,13 @@ MONTH_COLORS = {
 
 FALLBACK_COLORS = ["#1d4ed8", "#7c3aed", "#0891b2", "#059669", "#f59e0b", "#ef4444"]
 
+REQUIRED_DOCUMENTS = [
+    "Government ID proof",
+    "Income proof",
+    "Address proof",
+    "Loan purpose proof (if applicable)",
+]
+
 
 def _parse_datetime(value: Any) -> datetime | None:
     if not value:
@@ -131,6 +138,18 @@ def _applications_for_employee(all_applications: list[dict], employee_id: str, c
     ]
 
 
+def _risk_score(row: dict[str, Any] | None) -> int | None:
+    if not row:
+        return None
+    score = row.get("risk_score")
+    if score is None:
+        return None
+    try:
+        return int(float(score))
+    except (TypeError, ValueError):
+        return None
+
+
 def build_applicant_dashboard(applicant_row: dict, applications: list[dict]) -> dict[str, Any]:
     applicant = {
         "userId": applicant_row.get("user_id"),
@@ -159,22 +178,26 @@ def build_applicant_dashboard(applicant_row: dict, applications: list[dict]) -> 
             row for row in applications
             if _in_month(_parse_datetime(row.get("created_at")), key[0], key[1])
         ]
-        if month_apps:
+        month_risk_scores = [_risk_score(row) for row in month_apps]
+        month_risk_scores = [score for score in month_risk_scores if score is not None]
+        if month_risk_scores:
+            score = round(sum(month_risk_scores) / len(month_risk_scores))
+        elif month_apps:
             score = round(
                 sum(_application_progress_score(row.get("status", "pending")) for row in month_apps)
                 / len(month_apps)
             )
         else:
-            score = max(40, min(100, profile["percent"]))
+            score = _risk_score(latest) or max(40, min(100, profile["percent"]))
         trend.append({"month": month_labels[key], "score": score})
 
-    pending_docs = profile["total"] - profile["complete"]
-    document_mix = [
+    pending_profile_fields = profile["total"] - profile["complete"]
+    profile_mix = [
         {"name": "Done", "value": profile["complete"], "color": "#16a34a"},
-        {"name": "Pending", "value": max(pending_docs, 0), "color": "#f59e0b"},
+        {"name": "Pending", "value": max(pending_profile_fields, 0), "color": "#f59e0b"},
     ]
-    if document_mix[0]["value"] == 0 and document_mix[1]["value"] == 0:
-        document_mix = [
+    if profile_mix[0]["value"] == 0 and profile_mix[1]["value"] == 0:
+        profile_mix = [
             {"name": "Done", "value": 0, "color": "#16a34a"},
             {"name": "Pending", "value": 5, "color": "#f59e0b"},
         ]
@@ -194,9 +217,9 @@ def build_applicant_dashboard(applicant_row: dict, applications: list[dict]) -> 
 
     timeline = [
         {"label": "Application submitted", "done": bool(applications)},
-        {"label": "Documents collected", "done": profile["complete"] >= 3},
+        {"label": "Profile completed", "done": profile["complete"] >= 3},
         {"label": "Income verification", "done": bool(latest and latest.get("monthly_income"))},
-        {"label": "Address proof check", "done": bool(str(applicant_row.get("address") or "").strip())},
+        {"label": "Address verification", "done": bool(str(applicant_row.get("address") or "").strip())},
         {"label": "Final approval", "done": status_normalized == "approved"},
     ]
 
@@ -224,6 +247,7 @@ def build_applicant_dashboard(applicant_row: dict, applications: list[dict]) -> 
     loan_amount = float(latest.get("loan_amount") or 0) if latest else 0
     tenure = int(latest.get("tenure_months") or 12) if latest else 12
     emi = _estimate_emi(loan_amount, tenure)
+    latest_risk = _risk_score(latest)
 
     return {
         "applicant": applicant,
@@ -236,6 +260,9 @@ def build_applicant_dashboard(applicant_row: dict, applications: list[dict]) -> 
             "tenureMonths": tenure,
             "status": latest.get("status") if latest else None,
             "createdAt": latest.get("created_at") if latest else None,
+            "riskScore": latest_risk,
+            "riskLevel": latest.get("risk_level") if latest else None,
+            "riskRecommendation": latest.get("risk_recommendation") if latest else None,
         } if latest else None,
         "hero": {
             "statusLabel": hero_status,
@@ -248,22 +275,35 @@ def build_applicant_dashboard(applicant_row: dict, applications: list[dict]) -> 
             "reviewDate": _format_relative_time(latest.get("created_at")) if latest else "—",
             "creditHistory": "Good" if not latest or not latest.get("had_late_payments") else "Review needed",
             "incomeStability": "Strong" if latest and float(latest.get("monthly_income") or 0) >= 30000 else "Pending",
-            "documentHealth": "Complete" if profile["complete"] == profile["total"] else "Action needed",
+            "profileCompleteness": "Complete" if profile["complete"] == profile["total"] else "Action needed",
         },
         "metrics": {
             "activeLoans": active_count,
-            "profileScore": profile["percent"],
-            "profileScoreDetail": f"{profile['complete']} of {profile['total']} profile fields complete",
-            "docsUploaded": f"{profile['complete']} / {profile['total']}",
-            "docsDetail": "Complete profile to speed up review" if pending_docs else "Profile documents complete",
+            "profileScore": latest_risk if latest_risk is not None else profile["percent"],
+            "profileScoreDetail": (
+                f"Latest application risk score: {latest_risk}/100"
+                if latest_risk is not None
+                else f"{profile['complete']} of {profile['total']} profile fields complete"
+            ),
+            "profileFieldsComplete": f"{profile['complete']} / {profile['total']}",
+            "profileFieldsDetail": (
+                "Complete profile to speed up review"
+                if pending_profile_fields
+                else "Profile details complete"
+            ),
         },
         "applicationTrend": trend,
-        "documentMix": document_mix,
+        "profileMix": profile_mix,
+        "requiredDocuments": REQUIRED_DOCUMENTS,
         "timeline": timeline,
         "recentActivity": recent_activity,
         "recommendation": {
-            "title": "Complete your profile" if pending_docs else "Track your application",
-            "desc": "Add missing profile details to avoid review delays." if pending_docs else "Your latest application is moving through review.",
+            "title": "Complete your profile" if pending_profile_fields else "Track your application",
+            "desc": (
+                "Add missing profile details to avoid review delays."
+                if pending_profile_fields
+                else "Your latest application is moving through review."
+            ),
         },
     }
 

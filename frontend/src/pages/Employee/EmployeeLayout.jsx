@@ -5,6 +5,7 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   Search,
   TrendingUp,
   UserCog,
@@ -19,6 +20,7 @@ const navItems = [
   { label: "Customers", icon: Users, path: "/employee/customers" },
   { label: "Applications", icon: FileText, path: "/employee/applications" },
   { label: "Reports", icon: TrendingUp, path: "/employee/reports" },
+  { label: "Support", icon: MessageCircle, path: "/employee/support" },
 ];
 
 const EmployeeLayout = () => {
@@ -70,8 +72,11 @@ const EmployeeLayout = () => {
             <p className="mt-2 text-xs leading-relaxed text-blue-100">
               All systems operational. Last sync: 2 min ago.
             </p>
-            <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#071a3f]">
-              View logs <ArrowRight size={14} />
+            <button
+              onClick={() => navigate("/employee/support")}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#071a3f]"
+            >
+              Start chat <ArrowRight size={14} />
             </button>
           </div>
 

@@ -344,32 +344,38 @@ def _rule_based_score(features: dict[str, float]) -> tuple[int, list[dict[str, A
 
 
 def predict_application_risk(application: dict[str, Any]) -> dict[str, Any]:
+    from shap_explainer import explain_application_risk
+
     features = _application_features(application)
     model = _load_model()
     score = None
     risk_factors = []
+    shap_explanation: dict[str, Any] = {"available": False, "features": []}
+    default_probability: float | None = None
     source = "rules"
+
+    if model is None:
+        shap_explanation = {"available": False, "reason": "model_not_loaded", "features": []}
 
     if model is not None:
         try:
             frame = pd.DataFrame([features], columns=FEATURE_COLUMNS)
             default_probability = float(model.predict_proba(frame)[0][1])
             score = int(max(1, min(99, round(default_probability * 100))))
-            top_features = sorted(
-                features.items(),
-                key=lambda item: abs(item[1] - _load_feature_medians()[item[0]]),
-                reverse=True,
-            )[:5]
-            risk_factors = [
-                {
-                    "feature": name.replace("_", " ").title(),
-                    "impact": "medium",
-                    "direction": "risk" if value > _load_feature_medians()[name] else "positive",
-                }
-                for name, value in top_features
-            ]
+            shap_explanation = explain_application_risk(application, top_k=8)
+            if shap_explanation.get("available"):
+                risk_factors = [
+                    {
+                        "feature": item["feature"],
+                        "impact": item["impact"],
+                        "direction": item["direction"],
+                        "shapValue": item["shapValue"],
+                    }
+                    for item in shap_explanation["features"][:5]
+                ]
             source = "model"
-        except Exception:
+        except Exception as exc:
+            shap_explanation = {"available": False, "reason": f"model_error: {str(exc)}", "features": []}
             score = None
 
     if score is None:
@@ -383,6 +389,8 @@ def predict_application_risk(application: dict[str, Any]) -> dict[str, Any]:
         "riskRecommendation": _recommendation(score),
         "riskFactors": risk_factors,
         "riskSource": source,
+        "defaultProbability": default_probability,
+        "shapExplanation": shap_explanation,
     }
 
 

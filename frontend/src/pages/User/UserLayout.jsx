@@ -7,7 +7,6 @@ import {
   LogOut,
   MessageCircle,
   ShieldCheck,
-  Upload,
   User,
 } from "lucide-react";
 import logo from "../../assets/logo.png";
@@ -22,9 +21,8 @@ const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/user/dashboard", open: true },
   { label: "Details", icon: User, path: "/user/profile", open: true },
   { label: "Applications", icon: FileText, path: "/user/applications" },
-  { label: "Documents", icon: Upload, path: "/user/documents" },
   { label: "Eligibility", icon: ShieldCheck, path: "/user/eligibility" },
-  { label: "Support", icon: MessageCircle, path: "/user/support" },
+  { label: "Support", icon: MessageCircle, path: "/user/support", open: true },
 ];
 
 const UserLayout = () => {
@@ -91,13 +89,7 @@ const UserLayout = () => {
               A loan advisor is available for your application review.
             </p>
             <button
-              onClick={() => {
-                if (!getStoredUserDetailsComplete()) {
-                  navigate("/user/profile");
-                  return;
-                }
-                navigate("/user/support");
-              }}
+              onClick={() => navigate("/user/support")}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#071a3f]"
             >
               Start chat <ArrowRight size={14} />

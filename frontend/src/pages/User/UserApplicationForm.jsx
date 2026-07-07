@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, FileText, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileText, Info, Send } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 const STEPS = [
@@ -50,6 +50,35 @@ const MARITAL_STATUSES_WITH_CHILDREN = ["Married", "Divorced", "Widowed"];
 
 const showChildrenField = (maritalStatus) =>
   MARITAL_STATUSES_WITH_CHILDREN.includes(maritalStatus);
+
+const formatDateForInput = (value) => {
+  if (!value) return "";
+  const str = String(value);
+  return str.includes("T") ? str.slice(0, 10) : str;
+};
+
+const prefillFromApplication = (application) => ({
+  fullName: application.fullName || "",
+  dateOfBirth: formatDateForInput(application.dateOfBirth),
+  gender: application.gender || "",
+  maritalStatus: application.maritalStatus || "",
+  numChildren: application.numChildren ?? 0,
+  educationLevel: application.educationLevel || "",
+  phoneNumber: application.phoneNumber || "",
+  address: application.address || "",
+  employmentType: application.employmentType || "",
+  yearsEmployed:
+    application.yearsEmployed != null && application.yearsEmployed !== ""
+      ? String(application.yearsEmployed)
+      : "",
+  monthlyIncome:
+    application.monthlyIncome != null && application.monthlyIncome !== ""
+      ? String(application.monthlyIncome)
+      : "",
+  ownsCar: Boolean(application.ownsCar),
+  ownsHouse: Boolean(application.ownsHouse),
+  regionType: application.regionType || "",
+});
 
 const formatCurrency = (value) =>
   `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
@@ -134,39 +163,54 @@ const UserApplicationForm = () => {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [prefilledFromPrevious, setPrefilledFromPrevious] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadInitialData = async () => {
       if (!user?.user_id) {
         setLoading(false);
         return;
       }
       try {
-        const res = await fetch(`http://localhost:8000/applicant/${user.user_id}/profile`);
-        const data = await res.json();
-        if (res.ok && data.applicant) {
-          const profile = data.applicant;
-          setForm((current) => ({
-            ...current,
+        const [profileRes, appsRes] = await Promise.all([
+          fetch(`http://localhost:8000/applicant/${user.user_id}/profile`),
+          fetch(`http://localhost:8000/applicant/${user.user_id}/applications`),
+        ]);
+        const profileData = await profileRes.json();
+        const appsData = await appsRes.json();
+
+        let nextForm = { ...emptyForm };
+
+        if (profileRes.ok && profileData.applicant) {
+          const profile = profileData.applicant;
+          nextForm = {
+            ...nextForm,
             fullName: profile.fullName || user.name || "",
             phoneNumber: profile.phone || "",
             address: [profile.address, profile.city, profile.state, profile.pincode]
               .filter(Boolean)
               .join(", "),
-          }));
+          };
+        } else {
+          nextForm.fullName = user?.name || "";
         }
+
+        const previousApps = appsData.applications || [];
+        if (previousApps.length > 0) {
+          nextForm = { ...nextForm, ...prefillFromApplication(previousApps[0]) };
+          setPrefilledFromPrevious(true);
+        }
+
+        setForm(nextForm);
       } catch {
-        setForm((current) => ({
-          ...current,
-          fullName: user?.name || "",
-        }));
+        setForm({ ...emptyForm, fullName: user?.name || "" });
       } finally {
         setLoading(false);
       }
     };
-    loadProfile();
+    loadInitialData();
   }, [user?.user_id, user?.name]);
 
   const update = (patch) => setForm((current) => ({ ...current, ...patch }));
@@ -285,6 +329,16 @@ const UserApplicationForm = () => {
         </div>
         <StepProgress step={step} />
       </section>
+
+      {prefilledFromPrevious && !loading && (
+        <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          <Info size={18} className="mt-0.5 shrink-0" />
+          <p>
+            Your personal and employment details have been filled in from your last application.
+            You can edit any field before submitting.
+          </p>
+        </div>
+      )}
 
       {(message || error) && (
         <div className={`rounded-lg border px-4 py-3 text-sm ${

@@ -1,160 +1,351 @@
-# CredPilot
+# 🚀 CredPilot
 
-**Predict. Trust. Proceed.**
+<div align="center">
 
-An AI-powered loan default prediction platform for microfinance institutions, built with three role-based portals — applicants, loan officers, and bank admins — backed by an explainable ML model and Gemini-powered support assistants.
+# Predict. Trust. Proceed.
 
----
+**An AI-powered loan default prediction platform for Microfinance Institutions featuring Explainable AI, Role-Based Portals, and Gemini-powered AI assistants.**
 
-## Problem statement
+![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688)
+![React](https://img.shields.io/badge/React-Frontend-61DAFB)
+![XGBoost](https://img.shields.io/badge/XGBoost-ML_Model-orange)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E)
+![License](https://img.shields.io/badge/License-MIT-success)
 
-Microfinance institutions serve borrowers who have no formal credit history (no CIBIL score, no credit card), making loan risk assessment almost entirely manual and inconsistent. Loan officers rely on gut feeling, leading to avoidable defaults and inconsistent approval decisions across branches. CredPilot replaces this with a data-driven, explainable risk score — without requiring any credit bureau data.
-
----
-
-## Key features
-
-- **Risk prediction** — XGBoost model trained on 300K+ historical loan records, achieving an AUC of 0.73 using only fields a field officer can realistically collect (income, employment, family status, past repayment behavior).
-- **Explainability (SHAP)** — every prediction comes with a plain-language breakdown of which factors increased or decreased the applicant's risk, instead of a black-box score.
-- **Eligibility pre-check** — applicants can run a lightweight risk estimate before submitting a full loan application.
-- **Three role-based portals**:
-  - **Applicant** — apply for a loan, check eligibility, track application status, manage profile, and chat with an AI support assistant.
-  - **Loan officer** — review assigned applications, view risk scores and SHAP explanations, approve/reject/request additional information, and access performance reports.
-  - **Admin** — monitor approval trends, manage employees and customers, audit officer performance, run fairness-oriented analytics, and use an admin support assistant.
-- **Role-based LLM assistants** — Gemini-powered support chat for applicants, employees, and admins, with separate API keys and system prompts per role.
-- **Fairness audit** — checks whether the model's predictions are biased by gender, education level, or region — a step most student ML projects skip entirely.
+</div>
 
 ---
 
-## Tech stack
+## 📖 Overview
 
-| Layer | Technology |
-|---|---|
-| ML model | XGBoost, SHAP, scikit-learn |
-| Backend | FastAPI, Supabase (PostgreSQL) |
-| Frontend | React, Tailwind CSS, React Router, Axios, Recharts |
-| LLM | Google Gemini API |
-| Data | [Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk) (Kaggle) |
+Microfinance institutions often lend to borrowers with **little or no formal credit history**, making loan approval a largely manual and subjective process. This can lead to inconsistent decisions and higher default rates.
+
+**CredPilot** provides an AI-driven decision support system that predicts loan default risk using machine learning, explains every prediction using SHAP, and offers Gemini-powered AI assistants tailored for applicants, loan officers, and administrators.
+
+Unlike traditional credit scoring systems, CredPilot relies only on information that a field loan officer can realistically collect, making it suitable for real-world microfinance environments.
 
 ---
 
-## Project structure
+## ✨ Key Features
 
+### 🤖 AI-Powered Risk Prediction
+
+- Predicts loan default probability using **XGBoost**
+- Trained on **300,000+ historical loan records**
+- Uses practical applicant information instead of credit bureau data
+- Achieved **AUC-ROC of 0.73**
+
+### 🔍 Explainable AI (SHAP)
+
+Every prediction is accompanied by an easy-to-understand explanation showing:
+
+- Factors increasing risk
+- Factors reducing risk
+- Feature importance
+- Human-readable reasoning instead of a black-box score
+
+### 📝 Eligibility Pre-check
+
+Applicants can estimate their loan eligibility before submitting a complete application.
+
+### 👥 Three Role-Based Portals
+
+#### 👤 Applicant
+
+- Register & Login
+- Eligibility Prediction
+- Apply for Loan
+- Track Applications
+- Manage Profile
+- AI Support Assistant
+
+#### 👨‍💼 Loan Officer
+
+- Review Assigned Applications
+- View Risk Scores
+- SHAP Explanations
+- Approve / Reject Applications
+- Request Additional Information
+- Performance Dashboard
+- AI Assistant
+
+#### 🏢 Admin
+
+- Employee Management
+- Customer Management
+- Approval Analytics
+- Fairness Reports
+- Officer Performance Monitoring
+- AI Assistant
+
+### 💬 Gemini AI Assistants
+
+Dedicated AI assistants are available for:
+
+- Applicant Support
+- Employee Support
+- Admin Support
+
+Each assistant uses its own prompt and API key for role-specific assistance.
+
+### ⚖️ Fairness Audit
+
+The platform evaluates prediction bias across:
+
+- Gender
+- Education Level
+- Region
+
+to encourage responsible AI deployment.
+
+---
+
+## 🧠 Machine Learning Pipeline
+
+```text
+Loan Dataset
+      │
+      ▼
+Data Cleaning
+      │
+      ▼
+Feature Engineering
+      │
+      ▼
+XGBoost Model
+      │
+      ▼
+Risk Prediction
+      │
+      ▼
+SHAP Explainability
+      │
+      ▼
+Human-readable Explanation
+      │
+      ▼
+Loan Decision Support
 ```
-CredPilot/
-├── notebooks/              # Data exploration, cleaning, and model training (Jupyter)
-├── model/                  # Saved model.pkl (pre-trained)
-├── Backend/
-│   ├── app.py              # FastAPI entry point and API routes
-│   ├── database.py         # Supabase client
-│   ├── risk_model.py       # Model loading, feature engineering, and prediction
-│   ├── shap_explainer.py   # SHAP value extraction and human-readable labels
-│   ├── dashboard_analytics.py  # Role-specific dashboard and report builders
-│   ├── api/
-│   │   ├── schemas.py      # Pydantic request/response models
-│   │   └── utils.py        # ID generation and helpers
-│   ├── requirements.txt
-│   └── .env.example
-└── frontend/
-    └── src/
-        ├── pages/
-        │   ├── User/       # Applicant portal (dashboard, apply, eligibility, support)
-        │   ├── Employee/   # Loan officer portal
-        │   ├── Admin/      # Admin portal
-        │   ├── Login/
-        │   ├── Register/
-        │   └── LandingPage/
-        ├── services/       # Axios API clients
-        ├── context/        # Auth state (AuthContext)
-        └── utils/          # Export helpers and role-specific utilities
-```
 
 ---
 
-## Model performance
+## 📊 Model Performance
 
 | Metric | Score |
-|---|---|
-| AUC-ROC | 0.73 |
-| Recall (defaulters) | 0.55 |
-| Precision (non-defaulters) | 0.94 |
+|--------|------:|
+| AUC-ROC | **0.73** |
+| Recall (Defaulters) | **0.55** |
+| Precision (Non-Defaulters) | **0.94** |
 
-The dataset's known competitive ceiling (per the original $70,000 Kaggle competition) is approximately 0.80–0.81, achieved using all 7 relational tables and extensive ensembling. This project uses 3 tables and a focused feature set chosen for real-world collectibility by a field loan officer — prioritizing interpretability and practical deployability over a marginal AUC gain.
+> The original Home Credit Kaggle competition achieved approximately **0.80–0.81 AUC** using all seven relational tables and advanced ensembling techniques. CredPilot intentionally prioritizes interpretability and practical deployment by using three tables and features that can realistically be collected during field verification.
 
 ---
 
-## Getting started
+## 🏗️ System Architecture
+
+```text
+                React Frontend
+                      │
+                      ▼
+              FastAPI Backend
+                      │
+        ┌─────────────┴─────────────┐
+        ▼                           ▼
+ Supabase Database           XGBoost Model
+                                    │
+                                    ▼
+                            SHAP Explainer
+                                    │
+                                    ▼
+                        Human-readable Output
+                                    │
+                                    ▼
+                          Gemini AI Assistants
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---------|------------|
+| Frontend | React, Tailwind CSS, React Router, Axios, Recharts |
+| Backend | FastAPI |
+| Database | Supabase (PostgreSQL) |
+| Machine Learning | XGBoost, SHAP, scikit-learn |
+| AI | Google Gemini API |
+| Dataset | Home Credit Default Risk |
+
+---
+
+## 📂 Project Structure
+
+```text
+CredPilot/
+│
+├── notebooks/
+│   ├── Data exploration
+│   ├── Data cleaning
+│   ├── Feature engineering
+│   └── Model training
+│
+├── model/
+│   └── model.pkl
+│
+├── Backend/
+│   ├── app.py
+│   ├── database.py
+│   ├── risk_model.py
+│   ├── shap_explainer.py
+│   ├── dashboard_analytics.py
+│   ├── api/
+│   ├── requirements.txt
+│   └── .env.example
+│
+├── frontend/
+│   └── src/
+│       ├── pages/
+│       ├── services/
+│       ├── context/
+│       └── utils/
+│
+└── README.md
+```
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
 - Python 3.10+
 - Node.js 18+
-- A [Supabase](https://supabase.com/) project with the CredPilot schema applied
-- Google Gemini API keys (one per support assistant role, or shared)
+- Supabase Project
+- Google Gemini API Keys
 
 ### Backend
 
 ```bash
 cd Backend
+
 pip install -r requirements.txt
+
 pip install supabase python-dotenv passlib pydantic
+
 cp .env.example .env
+
 uvicorn app:app --reload
 ```
 
-The API runs at `http://127.0.0.1:8000`.
+Backend runs at:
 
-Configure `Backend/.env`:
+```text
+http://127.0.0.1:8000
+```
 
-| Variable | Purpose |
-|---|---|
-| `SUPABASE_URL` | Supabase project URL |
-| `SUPABASE_KEY` | Supabase service/anon key |
-| `GEMINI_API_KEY` | Applicant support assistant |
-| `GEMINI_EMPLOYEE_API_KEY` | Employee support assistant |
-| `GEMINI_ADMIN_API_KEY` | Admin support assistant |
+### Environment Variables
 
-Optional model overrides: `GEMINI_MODEL`, `GEMINI_EMPLOYEE_MODEL`, `GEMINI_ADMIN_MODEL` (default: `gemini-2.0-flash`).
+| Variable | Description |
+|-----------|-------------|
+| SUPABASE_URL | Supabase Project URL |
+| SUPABASE_KEY | Supabase Project Key |
+| GEMINI_API_KEY | Applicant Assistant |
+| GEMINI_EMPLOYEE_API_KEY | Employee Assistant |
+| GEMINI_ADMIN_API_KEY | Admin Assistant |
 
 ### Frontend
 
 ```bash
 cd frontend
+
 npm install
+
 npm start
 ```
 
-The app runs at `http://localhost:3000` and expects the backend on port `8000`.
+Frontend runs at:
 
-### Model training (optional — pre-trained model included)
-
-```bash
-cd notebooks
-jupyter notebook
+```text
+http://localhost:3000
 ```
 
-Suggested order: `01_test_setup.ipynb` → `02_explore_data.ipynb` → `03_clean_data.ipynb` → `04_train_model.ipynb`, then the updated feature notebooks (`05`–`08`) as needed.
+---
+
+## 📚 API Overview
+
+### Authentication
+
+- `POST /register`
+- `POST /login`
+
+### Applicant
+
+- Eligibility Check
+- Loan Application
+- Dashboard
+- Profile
+- Support Chat
+
+### Employee
+
+- Dashboard
+- Assigned Applications
+- Review Applications
+- Support Chat
+
+### Admin
+
+- Dashboard
+- Reports
+- Employee Management
+- Application Review
+- Support Chat
+
+Interactive API Documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
 
 ---
 
-## API overview
+## 📸 Screenshots
 
-| Area | Endpoints |
-|---|---|
-| Auth | `POST /register`, `POST /login` |
-| Applicant | `GET/PATCH /applicant/{id}/profile`, `GET /applicant/{id}/dashboard`, `POST /applicant/{id}/eligibility-check`, `POST/GET /applicant/{id}/applications`, `POST /applicant/{id}/support-chat` |
-| Employee | `GET /employee/{id}/dashboard`, `GET /employee/{id}/applications`, `PATCH /employee/{id}/applications/{app_id}/review`, `POST /employee/{id}/support-chat` |
-| Admin | `GET /admin/dashboard`, `GET /admin/reports`, `GET/POST/PATCH/DELETE /admin/employees`, `GET /admin/applications`, `PATCH /admin/applications/{id}/review`, `POST /admin/{id}/support-chat` |
+> Add screenshots here.
 
-Interactive docs: `http://127.0.0.1:8000/docs`
+- Landing Page
+- Applicant Dashboard
+- Loan Eligibility Check
+- Risk Prediction
+- SHAP Explanation
+- Employee Dashboard
+- Admin Dashboard
+- Analytics
+- AI Chat Assistant
+
+---
+
+## 🔮 Future Scope
+
+- 🌐 Multi-language AI Assistant
+- 📱 Mobile-first Responsive Design
+- 📈 Integration with all Home Credit tables
+- 🏦 Real-world Banking Deployment
+- 📊 Advanced Explainability Dashboard
+- 📄 PDF Report Generation
+- 🔔 Notification System
 
 ---
 
-## Future scope
+## 📚 Dataset
 
-- Multi-language support for the applicant chat assistant (Hindi and regional languages)
-- Mobile-first responsive design
-- Integration with all 7 Home Credit data tables for improved AUC
-- Real bank deployment pilot with anonymized live data
+**Home Credit Default Risk**
+
+https://www.kaggle.com/c/home-credit-default-risk
 
 ---
+
+## ⭐ Support
+
+If you found this project useful, consider giving it a ⭐ on GitHub!

@@ -1,19 +1,8 @@
 # 🚀 CredPilot
 
-<div align="center">
-
 # Predict. Trust. Proceed.
 
 **An AI-powered loan default prediction platform for Microfinance Institutions featuring Explainable AI, Role-Based Portals, and Gemini-powered AI assistants.**
-
-![Python](https://img.shields.io/badge/Python-3.10+-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688)
-![React](https://img.shields.io/badge/React-Frontend-61DAFB)
-![XGBoost](https://img.shields.io/badge/XGBoost-ML_Model-orange)
-![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E)
-![License](https://img.shields.io/badge/License-MIT-success)
-
-</div>
 
 ---
 
@@ -307,22 +296,6 @@ Interactive API Documentation:
 ```text
 http://127.0.0.1:8000/docs
 ```
-
----
-
-## 📸 Screenshots
-
-> Add screenshots here.
-
-- Landing Page
-- Applicant Dashboard
-- Loan Eligibility Check
-- Risk Prediction
-- SHAP Explanation
-- Employee Dashboard
-- Admin Dashboard
-- Analytics
-- AI Chat Assistant
 
 ---
 
